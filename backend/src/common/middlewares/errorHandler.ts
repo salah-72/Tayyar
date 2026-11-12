@@ -50,6 +50,8 @@ const errorHandler = (
       success: false,
       status: known.status,
       message: known.message,
+      ...(known.code && { code: known.code }),
+      ...(known.details !== undefined && { details: known.details }),
       ...(isDev() && { stack: err?.stack }),
     });
   }
