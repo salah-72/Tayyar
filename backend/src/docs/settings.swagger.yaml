@@ -1,0 +1,121 @@
+paths:
+  /settings:
+    get:
+      summary: إعدادات المتجر
+      tags:
+        - Settings
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: الإعدادات الحالية
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      settings:
+                        $ref: '#/components/schemas/Settings'
+        '401':
+          description: مش مسجّل دخول
+        '503':
+          description: الإعدادات لسه متضبطتش (SETTINGS_NOT_INITIALIZED)
+
+    patch:
+      summary: تعديل إعدادات المتجر (أي حقل لوحده). أول مرة لازم whatsappNumber.
+      tags:
+        - Settings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsInput'
+      responses:
+        '200':
+          description: اتعدّلت
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      settings:
+                        $ref: '#/components/schemas/Settings'
+        '400':
+          description: بيانات غير صحيحة
+        '401':
+          description: مش مسجّل دخول
+        '422':
+          description: أول مرة ومفيش whatsappNumber (WHATSAPP_REQUIRED)
+
+components:
+  schemas:
+    Settings:
+      type: object
+      properties:
+        storeName:
+          type: string
+          example: البيه الطيار
+        tagline:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        whatsappNumber:
+          type: string
+          description: بالصيغة الدولية بدون + (201012345678)
+          example: '201012345678'
+        freeDeliveryThresholdMinor:
+          type: integer
+          description: بالقروش. 0 = التوصيل المجاني متعطّل
+          example: 50000
+        acceptingOrders:
+          type: boolean
+          description: false = المتجر مش بيستقبل أوردرات
+
+    UpdateSettingsInput:
+      type: object
+      minProperties: 1
+      properties:
+        storeName:
+          type: string
+          maxLength: 80
+        tagline:
+          type: string
+          nullable: true
+          maxLength: 150
+        logoUrl:
+          type: string
+          nullable: true
+          format: uri
+        whatsappNumber:
+          type: string
+          description: أي صيغة (01012345678 أو +201012345678) وبيتحوّل للدولية
+          example: '01012345678'
+        freeDeliveryThresholdMinor:
+          type: integer
+          minimum: 0
+          example: 50000
+        acceptingOrders:
+          type: boolean
