@@ -11,6 +11,51 @@ datasource db {
   provider  = "postgresql"
 }
 
+enum Unit {
+  KG 
+  PIECE 
+  PACK 
+  BUNCH 
+  STRIP 
+  BOX 
+  INJECTION 
+  BOTTLE 
+  SACHET 
+  DISH 
+  TRAY 
+  LITER 
+}
+
+enum SaleMode {
+  UNIT
+  WEIGHT 
+  PIECE_WEIGHT
+}
+
+enum StoreType {
+  SUPPLIER 
+  RESTAURANT
+}
+
+enum OrderStatus {
+  PENDING 
+  PREPARING 
+  OUT_FOR_DELIVERY 
+  DELIVERED 
+  CANCELLED 
+}
+
+enum OptionPricing {
+  PER_KG 
+  PER_UNIT
+  FLAT
+}
+
+enum DiscountKind {
+  PERCENT 
+  FIXED
+  NONE
+}
 
 model Admin {
   id           Int           @id @default(autoincrement())
@@ -24,4 +69,220 @@ model RefreshToken {
   token   String
   admin   Admin  @relation(fields: [adminId], references: [id], onDelete: Cascade)
   adminId Int    @unique
+}
+
+model Settings {
+  id                         Int     @id @default(1)
+  storeName                  String  @default("البيه الطيار")
+  tagline                    String?
+  logoUrl                    String?
+  whatsappNumber             String
+  freeDeliveryThresholdMinor Int     @default(0)
+  acceptingOrders            Boolean @default(true)
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  imageUrl      String?
+  imagePublicId String?
+  sortOrder     Int           @default(0)
+  isActive      Boolean       @default(true)
+  archivedAt    DateTime?
+  discountKind  DiscountKind?
+  discountValue Int?
+
+  defaultStoreId String?
+  defaultStore   Store?  @relation("CategoryDefaultStore", fields: [defaultStoreId], references: [id])
+
+  products Product[]
+}
+
+model Store {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  type          StoreType
+  imageUrl      String?
+  imagePublicId String?
+  commissionBps Int       @default(0)
+  sortOrder     Int       @default(0)
+  isActive      Boolean   @default(true)
+  archivedAt    DateTime?
+
+  products          Product[]
+  defaultForCategories Category[] @relation("CategoryDefaultStore")
+  orderItems        OrderItem[]
+  settlements       StoreSettlement[]
+}
+
+model Product {
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  imageUrl      String?
+  imagePublicId String?
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  storeId     String?
+  store       Store?    @relation(fields: [storeId], references: [id])
+  menuSection String?
+
+  unit     Unit
+  saleMode SaleMode @default(UNIT)
+
+  priceMinor Int
+
+  minQty        Decimal   @default(1) @db.Decimal(10, 3)
+  qtyStep       Decimal   @default(1) @db.Decimal(10, 3)
+  weightChoices Decimal[] @db.Decimal(10, 3)
+
+  discountKind  DiscountKind?
+  discountValue Int?
+
+  isFeatured Boolean   @default(false)
+  isActive   Boolean   @default(true)
+  sortOrder  Int       @default(0)
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  optionGroups OptionGroup[]
+  orderItems   OrderItem[]
+}
+
+model OptionGroup {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String  @unique
+  minSelect Int     @default(0)
+  maxSelect Int     @default(1)
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  options  Option[]
+  products Product[]
+}
+
+model Option {
+  id         String        @id @default(cuid())
+  groupId    String
+  group      OptionGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name       String
+  pricing    OptionPricing
+  priceMinor Int
+  sortOrder  Int           @default(0)
+  isActive   Boolean       @default(true)
+}
+
+model Area {
+  id         String    @id @default(cuid())
+  name       String    @unique
+  feeMinor   Int
+  sortOrder  Int       @default(0)
+  isActive   Boolean   @default(true)
+  archivedAt DateTime?
+
+  orders Order[]
+}
+
+model Discount {
+  id               String       @id @default(cuid())
+  name             String
+  code             String?      @unique
+  kind             DiscountKind
+  value            Int
+  minSubtotalMinor Int          @default(0)
+  maxDiscountMinor Int?
+  isActive         Boolean      @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  maxUses          Int?
+  usedCount        Int          @default(0)
+
+  orders Order[]
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  number Int         @unique @default(autoincrement())
+  status OrderStatus @default(PENDING)
+  clientToken String? @unique
+
+  customerName   String
+  customerPhone  String
+  areaId         String?
+  area           Area?   @relation(fields: [areaId], references: [id])
+  areaName       String
+  addressDetails String
+  notes          String?
+
+  subtotalMinor        Int
+  invoiceDiscountMinor Int       @default(0)
+  discountId           String?
+  discount             Discount? @relation(fields: [discountId], references: [id])
+  discountLabel        String?
+  deliveryFeeMinor     Int
+  freeDeliveryApplied  Boolean   @default(false)
+  totalMinor           Int
+
+  isEstimated  Boolean @default(false)
+  needsPricing Boolean @default(false)
+  adminNote    String?
+  cancelReason String?
+
+  createdAt        DateTime  @default(now())
+  confirmedAt      DateTime?
+  outForDeliveryAt DateTime?
+  deliveredAt      DateTime?
+  cancelledAt      DateTime?
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  isCustom  Boolean  @default(false)
+
+  name               String
+  unit               Unit?
+  saleMode           SaleMode @default(UNIT)
+  quantity           Decimal  @default(1) @db.Decimal(10, 3)
+  weightPerUnit      Decimal? @db.Decimal(10, 3)
+  listUnitPriceMinor Int?
+  unitPriceMinor     Int?
+  options            Json?
+  lineTotalMinor     Int?
+  note               String?
+
+  categoryName  String?
+  storeId       String?
+  store         Store?  @relation(fields: [storeId], references: [id])
+  storeName     String?
+  menuSection   String?
+  commissionBps Int?
+
+  purchased       Boolean   @default(false)
+  purchasedAt     DateTime?
+  actualCostMinor Int?
+}
+
+model StoreSettlement {
+  id              String    @id @default(cuid())
+  storeId         String
+  store           Store     @relation(fields: [storeId], references: [id])
+  date            DateTime  @db.Date
+  salesMinor      Int
+  commissionMinor Int
+  dueMinor        Int
+  settledAt       DateTime?
+  note            String?
+
+  @@unique([storeId, date])
 }
