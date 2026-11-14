@@ -1,14 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 enum Unit {
@@ -16,14 +11,14 @@ enum Unit {
   PIECE 
   PACK 
   BUNCH 
-  STRIP 
+  STRIP
   BOX 
   INJECTION 
   BOTTLE 
   SACHET 
   DISH 
   TRAY 
-  LITER 
+  LITER
 }
 
 enum SaleMode {
@@ -220,6 +215,7 @@ model Order {
 
   subtotalMinor        Int
   invoiceDiscountMinor Int       @default(0)
+  serviceFeeMinor      Int       @default(0)
   discountId           String?
   discount             Discount? @relation(fields: [discountId], references: [id])
   discountLabel        String?
@@ -267,6 +263,7 @@ model OrderItem {
   storeName     String?
   menuSection   String?
   commissionBps Int?
+  serviceFeeMinor Int @default(0)
 
   purchased       Boolean   @default(false)
   purchasedAt     DateTime?
@@ -279,8 +276,7 @@ model StoreSettlement {
   store           Store     @relation(fields: [storeId], references: [id])
   date            DateTime  @db.Date
   salesMinor      Int
-  commissionMinor Int
-  dueMinor        Int
+  serviceFeeMinor Int @map("commissionMinor")
   settledAt       DateTime?
   note            String?
 
