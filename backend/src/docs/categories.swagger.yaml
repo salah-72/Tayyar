@@ -1,0 +1,271 @@
+paths:
+  /categories:
+    get:
+      summary: قايمة الأقسام (الافتراضي غير المؤرشفة)
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: archived
+          schema:
+            type: boolean
+          description: true = المؤرشفة بس
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: بحث بالاسم
+      responses:
+        '200':
+          description: القايمة مرتبة بـ sortOrder ثم الاسم
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      categories:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Category'
+        '401':
+          description: مش مسجّل دخول
+    post:
+      summary: إضافة قسم
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryInput'
+      responses:
+        '201':
+          description: اتضاف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          description: بيانات غير صحيحة
+        '409':
+          description: الاسم مستخدم (CATEGORY_NAME_TAKEN) أو الـ slug مستخدم (CATEGORY_SLUG_TAKEN)
+        '422':
+          description: خصم غير صحيح (INVALID_DISCOUNT) أو المحل مش مورّد/مش موجود
+
+  /categories/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: قسم واحد
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: القسم
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: مش موجود (CATEGORY_NOT_FOUND)
+    patch:
+      summary: تعديل قسم (أي حقل لوحده)
+      description: >
+        الخصم بيتراجع على الحالة النهائية. discountKind = NONE أو null بيشيل الخصم.
+        defaultStoreId = null بيشيل "بيتجاب من" الافتراضي.
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryInput'
+      responses:
+        '200':
+          description: اتعدّل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: الاسم/الـ slug مستخدم، أو القسم مؤرشف
+        '422':
+          description: خصم غير صحيح أو محل غير صالح
+    delete:
+      summary: أرشفة قسم (بيترفض لو فيه منتجات)
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتأرشف
+        '404':
+          description: مش موجود
+        '409':
+          description: لسه فيه منتجات (CATEGORY_HAS_PRODUCTS)
+
+  /categories/{id}/restore:
+    post:
+      summary: استرجاع قسم مؤرشف
+      tags:
+        - Categories
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: اترجع وبقى نشط
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: فيه قسم شغال بنفس الاسم
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: خضار
+        slug:
+          type: string
+          example: vegetables
+        imageUrl:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        discountKind:
+          type: string
+          enum: [PERCENT, FIXED]
+          nullable: true
+          description: null = من غير خصم على القسم
+        discountValue:
+          type: integer
+          nullable: true
+          description: PERCENT → basis points (1000 = 10%)، FIXED → قروش
+        defaultStoreId:
+          type: string
+          nullable: true
+        defaultStoreName:
+          type: string
+          nullable: true
+        productsCount:
+          type: integer
+          description: عدد المنتجات غير المؤرشفة
+
+    CategoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            category:
+              $ref: '#/components/schemas/Category'
+
+    CreateCategoryInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 60
+          example: خضار
+        slug:
+          type: string
+          description: اختياري. لو اتساب فاضي بيتولّد تلقائي
+        sortOrder:
+          type: integer
+          default: 0
+        isActive:
+          type: boolean
+          default: true
+        discountKind:
+          type: string
+          enum: [PERCENT, FIXED, NONE]
+          nullable: true
+        discountValue:
+          type: integer
+          nullable: true
+          example: 1000
+        defaultStoreId:
+          type: string
+          nullable: true
+          description: 'بيتجاب من الافتراضي (لازم محل مورّد)'
+
+    UpdateCategoryInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 60
+        slug:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        discountKind:
+          type: string
+          enum: [PERCENT, FIXED, NONE]
+          nullable: true
+        discountValue:
+          type: integer
+          nullable: true
+        defaultStoreId:
+          type: string
+          nullable: true
