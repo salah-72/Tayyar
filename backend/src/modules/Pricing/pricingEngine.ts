@@ -198,6 +198,9 @@ function priceProductLine(line: ProductLine, p: PricingProduct): PricedItem {
     storeName: p.storeName,
     menuSection: p.menuSection,
     commissionBps: p.commissionBps,
+    serviceFeeMinor: p.commissionBps
+      ? bpsOf(lineNet + optionsTotal, p.commissionBps)
+      : 0,
   };
 }
 
@@ -243,6 +246,7 @@ export function priceCart(input: PricingInput): PricingResult {
         storeName: null,
         menuSection: null,
         commissionBps: null,
+        serviceFeeMinor: 0,
       };
     }
     const p = products.get(line.productId);
@@ -257,10 +261,12 @@ export function priceCart(input: PricingInput): PricingResult {
 
   let subtotal = 0;
   let productDiscount = 0;
+  let serviceFee = 0;
   for (const it of items) {
     if (it.lineTotalMinor == null) continue;
     subtotal += it.lineTotalMinor;
     productDiscount += it.lineDiscountMinor;
+    serviceFee += it.serviceFeeMinor;
   }
 
   const best = pickBestDiscount(subtotal, input.discounts);
@@ -277,11 +283,12 @@ export function priceCart(input: PricingInput): PricingResult {
     productDiscountMinor: productDiscount,
     subtotalMinor: subtotal,
     invoiceDiscountMinor: invoiceDiscount,
+    serviceFeeMinor: serviceFee,
     discountId: best?.discount.id ?? null,
     discountLabel: best?.discount.name ?? null,
     freeDeliveryApplied: freeDelivery,
     deliveryFeeMinor: deliveryFee,
-    totalMinor: afterDiscount + deliveryFee,
+    totalMinor: afterDiscount + serviceFee + deliveryFee,
     isEstimated: items.some((i) => i.saleMode !== 'UNIT'),
     needsPricing: items.some((i) => i.isCustom),
   };

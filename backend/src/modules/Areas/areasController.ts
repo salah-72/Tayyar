@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../common/utils/catchAsync';
+import { sendOk as ok } from '../../common/utils/respond';
 import { areasService } from './areasService';
 import type { ListAreasQuery } from './areasValidation';
-
-const ok = (res: Response, code: number, data: object) =>
-  res.status(code).json({ success: true, status: 'success', data });
 
 export const listAreas = catchAsync(async (req: Request, res: Response) => {
   const areas = await areasService.list(req.query as unknown as ListAreasQuery);

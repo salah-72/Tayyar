@@ -96,6 +96,7 @@ export interface PricedItem {
   storeName: string | null;
   menuSection: string | null;
   commissionBps: number | null;
+  serviceFeeMinor: number;
 }
 
 export interface PricingInput {
@@ -112,6 +113,7 @@ export interface PricingResult {
   productDiscountMinor: number;
   subtotalMinor: number;
   invoiceDiscountMinor: number;
+  serviceFeeMinor: number;
   discountId: string | null;
   discountLabel: string | null;
   freeDeliveryApplied: boolean;

@@ -25,7 +25,7 @@ function startOfDayUtc(dateStr: string, tz: string): number {
   const [y, m, d] = dateStr.split('-').map(Number);
   const naive = Date.UTC(y, m - 1, d);
   let guess = naive - offsetMinutes(naive, tz) * 60000;
-  guess = naive - offsetMinutes(guess, tz) * 60000; // تصحيح لو الفرق اتغير (توقيت صيفي)
+  guess = naive - offsetMinutes(guess, tz) * 60000;
   return guess;
 }
 

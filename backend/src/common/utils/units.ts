@@ -1,3 +1,20 @@
+export const UNIT_VALUES = [
+  'KG',
+  'PIECE',
+  'PACK',
+  'BUNCH',
+  'STRIP',
+  'BOX',
+  'INJECTION',
+  'BOTTLE',
+  'SACHET',
+  'DISH',
+  'TRAY',
+  'LITER',
+] as const;
+
+export type UnitValue = (typeof UNIT_VALUES)[number];
+
 export const UNIT_LABEL: Record<string, string> = {
   KG: 'كيلو',
   PIECE: 'قطعة',
@@ -13,4 +30,5 @@ export const UNIT_LABEL: Record<string, string> = {
   LITER: 'لتر',
 };
 
-export const unitLabel = (u: string | null | undefined): string => (u ? (UNIT_LABEL[u] ?? '') : '');
+export const unitLabel = (u: string | null | undefined): string =>
+  u ? (UNIT_LABEL[u] ?? '') : '';
