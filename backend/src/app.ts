@@ -13,6 +13,7 @@ import settingsRouter from './modules/Settings/settingsRouter';
 import areasRouter from './modules/Areas/areasRouter';
 import storesRouter from './modules/Stores/storesRouter';
 import categoriesRouter from './modules/Categories/categoriesRouter';
+import optionGroupsRouter from './modules/OptionGroups/optionGroupsRouter';
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use('/settings', settingsRouter);
 app.use('/areas', areasRouter);
 app.use('/stores', storesRouter);
 app.use('/categories', categoriesRouter);
+app.use('/option-groups', optionGroupsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

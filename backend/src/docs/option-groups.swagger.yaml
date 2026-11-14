@@ -1,0 +1,392 @@
+paths:
+  /option-groups:
+    get:
+      summary: قايمة مجموعات الخيارات بخياراتها
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: بحث بالاسم
+        - in: query
+          name: active
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: القايمة مرتبة بـ sortOrder ثم الاسم
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      groups:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OptionGroup'
+        '401':
+          description: مش مسجّل دخول
+    post:
+      summary: إضافة مجموعة (ممكن تبعت الخيارات معاها)
+      description: >
+        minSelect = 1 و maxSelect = 1 يعني لازم العميل يختار واحد (زي تنظيف الفرخة).
+        minSelect = 0 يعني اختياري. المجموعة الإجبارية لازم يكون فيها خيارات نشطة تكفي.
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOptionGroupInput'
+      responses:
+        '201':
+          description: اتضافت
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptionGroupResponse'
+        '400':
+          description: بيانات غير صحيحة
+        '409':
+          description: الاسم مستخدم (OPTION_GROUP_NAME_TAKEN) أو الـ slug مستخدم
+        '422':
+          description: قواعد المجموعة غير سليمة (INVALID_OPTION_GROUP)
+
+  /option-groups/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: مجموعة واحدة
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: المجموعة
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptionGroupResponse'
+        '404':
+          description: مش موجودة (OPTION_GROUP_NOT_FOUND)
+    patch:
+      summary: تعديل مجموعة (أي حقل لوحده)
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOptionGroupInput'
+      responses:
+        '200':
+          description: اتعدّلت
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptionGroupResponse'
+        '404':
+          description: مش موجودة
+        '409':
+          description: الاسم/الـ slug مستخدم
+        '422':
+          description: قواعد المجموعة غير سليمة
+    delete:
+      summary: حذف مجموعة (بيترفض لو مربوطة بمنتجات)
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتحذفت
+        '404':
+          description: مش موجودة
+        '409':
+          description: مربوطة بمنتجات (OPTION_GROUP_IN_USE)
+
+  /option-groups/{id}/options:
+    post:
+      summary: إضافة خيار للمجموعة
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOptionInput'
+      responses:
+        '201':
+          description: اتضاف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptionResponse'
+        '404':
+          description: المجموعة مش موجودة
+        '409':
+          description: فيه خيار بنفس الاسم (OPTION_NAME_TAKEN)
+
+  /option-groups/{id}/options/{optionId}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: optionId
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: تعديل خيار (أي حقل لوحده)
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOptionInput'
+      responses:
+        '200':
+          description: اتعدّل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptionResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: الاسم مستخدم، أو التعطيل هيخلي المجموعة أقل من minSelect (OPTIONS_BELOW_MIN)
+    delete:
+      summary: حذف خيار
+      description: الأوردرات القديمة محتفظة بلقطة الخيار فالحذف آمن.
+      tags:
+        - Option Groups
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتحذف
+        '404':
+          description: مش موجود
+        '409':
+          description: الحذف هيخلي المجموعة أقل من minSelect (OPTIONS_BELOW_MIN)
+
+components:
+  schemas:
+    Option:
+      type: object
+      properties:
+        id:
+          type: string
+        groupId:
+          type: string
+        name:
+          type: string
+          example: مقلي
+        pricing:
+          type: string
+          enum: [PER_KG, PER_UNIT, FLAT]
+          description: >
+            PER_KG = سعر × الوزن بالكيلو (للمنتجات بالوزن).
+            PER_UNIT = سعر × العدد (للمنتجات بالعدد).
+            FLAT = مبلغ ثابت مرة واحدة للبند.
+        priceMinor:
+          type: integer
+          description: بالقروش (2500 = 25 جنيه)
+          example: 2500
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    OptionGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: طريقة التجهيز
+        slug:
+          type: string
+        minSelect:
+          type: integer
+        maxSelect:
+          type: integer
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        productsCount:
+          type: integer
+          description: عدد المنتجات المربوطة
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Option'
+
+    OptionGroupResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            group:
+              $ref: '#/components/schemas/OptionGroup'
+
+    OptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            option:
+              $ref: '#/components/schemas/Option'
+
+    CreateOptionInput:
+      type: object
+      required:
+        - name
+        - pricing
+        - priceMinor
+      properties:
+        name:
+          type: string
+          maxLength: 60
+          example: مشوي
+        pricing:
+          type: string
+          enum: [PER_KG, PER_UNIT, FLAT]
+        priceMinor:
+          type: integer
+          minimum: 0
+          example: 3000
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateOptionInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          maxLength: 60
+        pricing:
+          type: string
+          enum: [PER_KG, PER_UNIT, FLAT]
+        priceMinor:
+          type: integer
+          minimum: 0
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    CreateOptionGroupInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 60
+          example: تنظيف الفرخة
+        slug:
+          type: string
+          description: اختياري. لو اتساب فاضي بيتولّد تلقائي
+        minSelect:
+          type: integer
+          minimum: 0
+          default: 0
+        maxSelect:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 1
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+          default: true
+        options:
+          type: array
+          maxItems: 30
+          items:
+            $ref: '#/components/schemas/CreateOptionInput'
+
+    UpdateOptionGroupInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 60
+        slug:
+          type: string
+        minSelect:
+          type: integer
+          minimum: 0
+        maxSelect:
+          type: integer
+          minimum: 1
+          maximum: 20
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
