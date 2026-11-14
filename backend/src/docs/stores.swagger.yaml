@@ -1,0 +1,257 @@
+paths:
+  /stores:
+    get:
+      summary: قايمة المحلات (الافتراضي غير المؤرشفة)
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [SUPPLIER, RESTAURANT]
+        - in: query
+          name: archived
+          schema:
+            type: boolean
+          description: true = المؤرشفة بس
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: بحث بالاسم
+      responses:
+        '200':
+          description: القايمة مرتبة بـ sortOrder ثم الاسم
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      stores:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Store'
+        '401':
+          description: مش مسجّل دخول
+    post:
+      summary: إضافة محل. النوع بيتحدد هنا ومبيتغيرش بعد كده.
+      description: commissionBps هي رسوم الخدمة اللي بتتضاف للعميل على أصناف المطعم (المنيو بيتعرض بسعره الأصلي). مطعم من غير commissionBps = 500 (5%). المورّد لازم commissionBps = 0.
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStoreInput'
+      responses:
+        '201':
+          description: اتضاف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreResponse'
+        '400':
+          description: بيانات غير صحيحة
+        '409':
+          description: الاسم مستخدم (STORE_NAME_TAKEN) أو الـ slug مستخدم (STORE_SLUG_TAKEN)
+        '422':
+          description: نسبة على مورّد (COMMISSION_NOT_ALLOWED)
+
+  /stores/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: محل واحد
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: المحل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreResponse'
+        '404':
+          description: مش موجود (STORE_NOT_FOUND)
+    patch:
+      summary: تعديل محل (أي حقل لوحده، النوع مش بيتعدّل)
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStoreInput'
+      responses:
+        '200':
+          description: اتعدّل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: الاسم/الـ slug مستخدم، أو المحل مؤرشف (STORE_ARCHIVED)
+        '422':
+          description: نسبة على مورّد
+    delete:
+      summary: أرشفة محل (مفيش حذف فعلي لأن الأوردرات والحسابات القديمة بتشاور عليه)
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتأرشف
+        '404':
+          description: مش موجود
+        '409':
+          description: لسه فيه منتجات (STORE_HAS_PRODUCTS) أو هو "بيتجاب من" افتراضي لقسم (STORE_IN_USE)
+
+  /stores/{id}/restore:
+    post:
+      summary: استرجاع محل مؤرشف
+      tags:
+        - Stores
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: اترجع وبقى نشط
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: فيه محل شغال بنفس الاسم
+
+components:
+  schemas:
+    Store:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: بيتزا بلازا
+        slug:
+          type: string
+          example: pizza-plaza
+        type:
+          type: string
+          enum: [SUPPLIER, RESTAURANT]
+        imageUrl:
+          type: string
+          nullable: true
+        commissionBps:
+          type: integer
+          description: رسوم الخدمة اللي بتتضاف للعميل على أصناف المطعم (basis points). 500 = 5%. المورّد لازم 0
+          example: 500
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        productsCount:
+          type: integer
+          description: عدد المنتجات غير المؤرشفة
+
+    StoreResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            store:
+              $ref: '#/components/schemas/Store'
+
+    CreateStoreInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+          example: كشري الزهراء
+        type:
+          type: string
+          enum: [SUPPLIER, RESTAURANT]
+        slug:
+          type: string
+          description: اختياري. لو اتساب فاضي بيتولّد تلقائي
+          example: zahraa-koshary
+        commissionBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        sortOrder:
+          type: integer
+          default: 0
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateStoreInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        slug:
+          type: string
+        commissionBps:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean

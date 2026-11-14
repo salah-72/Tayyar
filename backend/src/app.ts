@@ -11,6 +11,7 @@ import env from './config/env';
 import { buildSwaggerDocument } from './config/swagger';
 import settingsRouter from './modules/Settings/settingsRouter';
 import areasRouter from './modules/Areas/areasRouter';
+import storesRouter from './modules/Stores/storesRouter';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/auth', authRouter);
 app.use('/settings', settingsRouter);
 app.use('/areas', areasRouter);
+app.use('/stores', storesRouter);
 
 app.use(notFound);
 app.use(errorHandler);
