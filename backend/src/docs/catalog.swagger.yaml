@@ -1,0 +1,246 @@
+paths:
+  /catalog:
+    get:
+      summary: الكتالوج العام (لموقع العميل، من غير تسجيل دخول)
+      description: >
+        صفحة واحدة فيها الإعدادات العامة والبلاد والأقسام والمطاعم والمنتجات وعروض الفاتورة الأوتوماتيك.
+        السعر في كل منتج جاهز بعد الخصم (price.finalMinor). المنتج المقفول بزرار "مش متاح" بيرجع
+        available = false، والمنتجات اللي قسمها أو مطعمها مقفول مش بترجع. الفلوس بالقروش.
+        الرد بيتكاش 20 ثانية. السعر النهائي للأوردر بيتحسب من السيرفر وقت الطلب.
+      tags:
+        - Catalog
+      responses:
+        '200':
+          description: الكتالوج
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogResponse'
+        '503':
+          description: إعدادات المتجر لسه متضبطتش (SETTINGS_NOT_INITIALIZED)
+
+components:
+  schemas:
+    CatalogResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            settings:
+              $ref: '#/components/schemas/Settings'
+            areas:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  feeMinor:
+                    type: integer
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/CatalogCategory'
+            stores:
+              type: array
+              description: المطاعم/المحلات اللي ليها منيو (المورّدين مش بيظهروا)
+              items:
+                $ref: '#/components/schemas/CatalogStore'
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/CatalogProduct'
+            discounts:
+              type: array
+              description: عروض الفاتورة الأوتوماتيك الشغّالة دلوقتي (اللي من غير كود)
+              items:
+                $ref: '#/components/schemas/CatalogDiscount'
+            generatedAt:
+              type: string
+              format: date-time
+
+    CatalogCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        thumbUrl:
+          type: string
+          nullable: true
+        discountKind:
+          type: string
+          nullable: true
+        discountValue:
+          type: integer
+          nullable: true
+
+    CatalogStore:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        imageUrl:
+          type: string
+          nullable: true
+        thumbUrl:
+          type: string
+          nullable: true
+        serviceFeeBps:
+          type: integer
+          nullable: true
+          description: رسوم الخدمة اللي بتتضاف على أصناف المطعم ده (500 = 5%). السعر المعروض هو سعر المنيو والرسوم بتظهر لوحدها في السلة
+        sections:
+          type: array
+          description: أقسام المنيو بالترتيب (بيتزا، كريب...)
+          items:
+            type: string
+
+    CatalogPrice:
+      type: object
+      properties:
+        listMinor:
+          type: integer
+          description: السعر قبل الخصم (للوحدة، أو للكيلو، أو لأقل وزن لو منتج الوزن بالقطعة)
+        finalMinor:
+          type: integer
+          description: السعر بعد خصم المنتج/القسم
+        hasDiscount:
+          type: boolean
+        startsFrom:
+          type: boolean
+          description: true = السعر بيبدأ من أقل وزن متاح (الفرخة)
+
+    CatalogOption:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        pricing:
+          type: string
+          enum: [PER_KG, PER_UNIT, FLAT]
+        priceMinor:
+          type: integer
+
+    CatalogOptionGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        minSelect:
+          type: integer
+        maxSelect:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogOption'
+
+    CatalogProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          nullable: true
+        thumbUrl:
+          type: string
+          nullable: true
+          description: نسخة 400x400 للكروت
+        categoryId:
+          type: string
+          nullable: true
+        storeId:
+          type: string
+          nullable: true
+          description: لأصناف منيو المطاعم بس
+        serviceFeeBps:
+          type: integer
+          nullable: true
+          description: رسوم الخدمة على الصنف ده (basis points) لو مطعم، وإلا null
+        menuSection:
+          type: string
+          nullable: true
+        unit:
+          type: string
+        unitLabel:
+          type: string
+          example: كيلو
+        saleMode:
+          type: string
+          enum: [UNIT, WEIGHT, PIECE_WEIGHT]
+        minQty:
+          type: number
+        qtyStep:
+          type: number
+        weightChoices:
+          type: array
+          items:
+            type: number
+        price:
+          $ref: '#/components/schemas/CatalogPrice'
+        discount:
+          type: object
+          nullable: true
+          properties:
+            kind:
+              type: string
+              enum: [PERCENT, FIXED]
+            value:
+              type: integer
+            source:
+              type: string
+              enum: [product, category]
+        isFeatured:
+          type: boolean
+        available:
+          type: boolean
+        optionGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogOptionGroup'
+
+    CatalogDiscount:
+      type: object
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [PERCENT, FIXED]
+        value:
+          type: integer
+        minSubtotalMinor:
+          type: integer
+        maxDiscountMinor:
+          type: integer
+          nullable: true
