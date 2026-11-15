@@ -14,6 +14,7 @@ import areasRouter from './modules/Areas/areasRouter';
 import storesRouter from './modules/Stores/storesRouter';
 import categoriesRouter from './modules/Categories/categoriesRouter';
 import optionGroupsRouter from './modules/OptionGroups/optionGroupsRouter';
+import productsRouter from './modules/Products/productsRouter';
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/areas', areasRouter);
 app.use('/stores', storesRouter);
 app.use('/categories', categoriesRouter);
 app.use('/option-groups', optionGroupsRouter);
+app.use('/products', productsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
