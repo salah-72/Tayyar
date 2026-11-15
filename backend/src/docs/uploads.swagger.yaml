@@ -1,0 +1,225 @@
+paths:
+  /products/{id}/image:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: رفع صورة المنتج (بتبدّل القديمة)
+      description: JPEG أو PNG أو WebP، لحد 5 ميجا. الملف في الحقل file. النوع بيتفحص من محتوى الملف.
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadInput'
+      responses:
+        '200':
+          description: اترفعت
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageResponse'
+        '400':
+          description: مفيش ملف أو الطلب غلط (FILE_REQUIRED / BAD_UPLOAD)
+        '401':
+          description: مش مسجّل دخول
+        '404':
+          description: المنتج مش موجود
+        '413':
+          description: الصورة أكبر من 5 ميجا (IMAGE_TOO_LARGE)
+        '415':
+          description: الملف مش صورة مدعومة (UNSUPPORTED_IMAGE)
+        '502':
+          description: فشل الرفع على Cloudinary (UPLOAD_FAILED)
+        '503':
+          description: مفاتيح Cloudinary مش متضبطة (UPLOADS_NOT_CONFIGURED)
+    delete:
+      summary: مسح صورة المنتج
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتمسحت (أو مكانش فيه صورة)
+        '404':
+          description: المنتج مش موجود
+
+  /categories/{id}/image:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: رفع صورة القسم (بتبدّل القديمة)
+      description: JPEG أو PNG أو WebP، لحد 5 ميجا. الملف في الحقل file. النوع بيتفحص من محتوى الملف.
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadInput'
+      responses:
+        '200':
+          description: اترفعت
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageResponse'
+        '400':
+          description: مفيش ملف أو الطلب غلط (FILE_REQUIRED / BAD_UPLOAD)
+        '401':
+          description: مش مسجّل دخول
+        '404':
+          description: القسم مش موجود
+        '413':
+          description: الصورة أكبر من 5 ميجا (IMAGE_TOO_LARGE)
+        '415':
+          description: الملف مش صورة مدعومة (UNSUPPORTED_IMAGE)
+        '502':
+          description: فشل الرفع على Cloudinary (UPLOAD_FAILED)
+        '503':
+          description: مفاتيح Cloudinary مش متضبطة (UPLOADS_NOT_CONFIGURED)
+    delete:
+      summary: مسح صورة القسم
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتمسحت (أو مكانش فيه صورة)
+        '404':
+          description: القسم مش موجود
+
+  /stores/{id}/image:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: رفع صورة المحل (بتبدّل القديمة)
+      description: JPEG أو PNG أو WebP، لحد 5 ميجا. الملف في الحقل file. النوع بيتفحص من محتوى الملف.
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadInput'
+      responses:
+        '200':
+          description: اترفعت
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageResponse'
+        '400':
+          description: مفيش ملف أو الطلب غلط (FILE_REQUIRED / BAD_UPLOAD)
+        '401':
+          description: مش مسجّل دخول
+        '404':
+          description: المحل مش موجود
+        '413':
+          description: الصورة أكبر من 5 ميجا (IMAGE_TOO_LARGE)
+        '415':
+          description: الملف مش صورة مدعومة (UNSUPPORTED_IMAGE)
+        '502':
+          description: فشل الرفع على Cloudinary (UPLOAD_FAILED)
+        '503':
+          description: مفاتيح Cloudinary مش متضبطة (UPLOADS_NOT_CONFIGURED)
+    delete:
+      summary: مسح صورة المحل
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتمسحت (أو مكانش فيه صورة)
+        '404':
+          description: المحل مش موجود
+
+  /settings/logo:
+    post:
+      summary: رفع لوجو المتجر (بيتبدّل مش بيتراكم)
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadInput'
+      responses:
+        '200':
+          description: اترفع
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageResponse'
+        '400':
+          description: مفيش ملف
+        '413':
+          description: أكبر من 5 ميجا
+        '415':
+          description: مش صورة مدعومة
+        '503':
+          description: الإعدادات أو Cloudinary لسه متضبطوش
+    delete:
+      summary: مسح لوجو المتجر
+      tags:
+        - Images
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: اتمسح
+
+components:
+  schemas:
+    ImageUploadInput:
+      type: object
+      required:
+        - file
+      properties:
+        file:
+          type: string
+          format: binary
+          description: JPEG أو PNG أو WebP، لحد 5 ميجا
+
+    ImageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            imageUrl:
+              type: string
+              example: https://res.cloudinary.com/demo/image/upload/v1700000000/bayeh/products/x1.jpg

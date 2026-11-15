@@ -15,6 +15,7 @@ import storesRouter from './modules/Stores/storesRouter';
 import categoriesRouter from './modules/Categories/categoriesRouter';
 import optionGroupsRouter from './modules/OptionGroups/optionGroupsRouter';
 import productsRouter from './modules/Products/productsRouter';
+import uploadsRouter from './modules/Uploads/uploadsRouter';
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/auth', authRouter);
+app.use(uploadsRouter);
 app.use('/settings', settingsRouter);
 app.use('/areas', areasRouter);
 app.use('/stores', storesRouter);
