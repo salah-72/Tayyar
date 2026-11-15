@@ -1,0 +1,698 @@
+paths:
+  /orders/quote:
+    post:
+      summary: تسعير السلة من غير حفظ (عام)
+      description: >
+        بيحسب الأرقام اللي بتظهر في السلة بنفس كود حساب الأوردر الفعلي (خصومات المنتجات، خصم الفاتورة،
+        التوصيل المجاني). لو areaId ما اتبعتش: deliveryFeeMinor بيرجع null والإجمالي من غير توصيل.
+        لو كتبت كود خصم غلط أو منتهي: 422. الفلوس بالقروش، والكميات بالكيلو/العدد.
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '200':
+          description: الأرقام
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '400':
+          description: بيانات غير صحيحة
+        '422':
+          description: >
+            السلة مش قابلة للتسعير. الكود في error.code: PRODUCT_NOT_FOUND، PRODUCT_UNAVAILABLE،
+            BAD_QUANTITY، BELOW_MIN_QTY، AREA_UNAVAILABLE، INVALID_DISCOUNT_CODE، DISCOUNT_MIN_SUBTOTAL، وغيرها
+  /orders:
+    post:
+      summary: إنشاء أوردر (عام - العميل)
+      description: >
+        السيرفر بيحسب كل الأسعار بنفسه (الأرقام اللي في المتصفح ما بتتصدّقش) وبيخزّن لقطة كاملة
+        من الأسماء والأسعار والخيارات. clientToken معرّف عشوائي (16-64 حرف) بيتولّد في المتصفح لكل محاولة
+        طلب: لو اتبعت تاني بنفس القيمة بيرجع نفس الأوردر بكود 200 و duplicate=true بدل أوردر جديد.
+        كود الخصم بيتستهلك جوه نفس الـ transaction بشكل آمن (لو maxUses خلص: 422 DISCOUNT_EXHAUSTED).
+        الرد فيه نص ورابط الواتساب جاهزين.
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: أوردر جديد
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        '200':
+          description: نفس الطلب اتبعت قبل كده (duplicate=true)، رجع الأوردر الأصلي
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        '400':
+          description: بيانات غير صحيحة (موبايل، اسم، عنوان...)
+        '422':
+          description: السلة أو الخصم أو البلد مش صالحين (نفس أكواد /orders/quote + DISCOUNT_EXHAUSTED)
+        '503':
+          description: المتجر مش بيستقبل أوردرات (ORDERS_CLOSED)
+    get:
+      summary: قايمة الأوردرات (الأحدث الأول)
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: رقم الأوردر (105 أو #105) أو جزء من الاسم أو الموبايل
+        - in: query
+          name: areaId
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            example: '2026-06-01'
+          description: من تاريخ (YYYY-MM-DD) بتوقيت المتجر، شامل
+        - in: query
+          name: to
+          schema:
+            type: string
+            example: '2026-06-30'
+          description: إلى تاريخ (YYYY-MM-DD) بتوقيت المتجر، شامل
+      responses:
+        '200':
+          description: الأوردرات (صفوف خفيفة من غير البنود)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+        '401':
+          description: غير مسجّل دخول
+  /orders/counts:
+    get:
+      summary: عدد الأوردرات في كل حالة (لتابات لوحة الأدمن)
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: العدّادات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      counts:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                        example:
+                          PENDING: 4
+                          PREPARING: 2
+                          OUT_FOR_DELIVERY: 1
+                          DELIVERED: 120
+                          CANCELLED: 3
+        '401':
+          description: غير مسجّل دخول
+  /orders/{id}:
+    get:
+      summary: 'تفاصيل أوردر (بيانات داخلية، المحل والنسبة والشراء)'
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: الأوردر
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderResponse'
+        '404':
+          description: مش موجود (ORDER_NOT_FOUND)
+    patch:
+      summary: ملاحظة الأدمن على الأوردر
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - adminNote
+              properties:
+                adminNote:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        '200':
+          description: الأوردر بعد التعديل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderResponse'
+        '404':
+          description: مش موجود
+  /orders/{id}/status:
+    patch:
+      summary: تغيير حالة الأوردر
+      description: >
+        المسار الوحيد المسموح: PENDING ← PREPARING ← OUT_FOR_DELIVERY ← DELIVERED، خطوة واحدة في المرة،
+        أو CANCELLED من أي حالة غير نهائية (بسبب إجباري). DELIVERED و CANCELLED نهائيين.
+        الإلغاء بيرجّع استخدام كود الخصم. لو حد تاني غيّر الحالة في نفس اللحظة: 409 ORDER_CHANGED.
+      tags:
+        - Orders
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: '#/components/schemas/OrderStatus'
+                cancelReason:
+                  type: string
+                  description: إجباري لو status = CANCELLED
+      responses:
+        '200':
+          description: الأوردر بعد التعديل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOrderResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: انتقال غير مسموح (INVALID_TRANSITION) أو الحالة اتغيّرت (ORDER_CHANGED)
+
+components:
+  schemas:
+    OrderStatus:
+      type: string
+      enum:
+        - PENDING
+        - PREPARING
+        - OUT_FOR_DELIVERY
+        - DELIVERED
+        - CANCELLED
+    CartLine:
+      oneOf:
+        - type: object
+          required:
+            - type
+            - productId
+            - quantity
+          properties:
+            type:
+              type: string
+              enum:
+                - product
+            productId:
+              type: string
+            quantity:
+              type: number
+              description: عدد، أو كيلوهات لو المنتج بالوزن (لحد 3 كسور عشرية)
+              example: 0.5
+            weightPerUnit:
+              type: number
+              description: وزن القطعة المختار (للمنتجات PIECE_WEIGHT زي الفرخة)
+              example: 2
+            optionIds:
+              type: array
+              items:
+                type: string
+        - type: object
+          required:
+            - type
+            - text
+          properties:
+            type:
+              type: string
+              enum:
+                - custom
+            text:
+              type: string
+              description: صنف مكتوب بإيد العميل (سعره بعد الشراء)
+              example: ٢ كشري من محل التحرير
+            note:
+              type: string
+    QuoteRequest:
+      type: object
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLine'
+        areaId:
+          type: string
+        discountCode:
+          type: string
+    CreateOrderRequest:
+      type: object
+      required:
+        - clientToken
+        - customerName
+        - customerPhone
+        - areaId
+        - addressDetails
+        - lines
+      properties:
+        clientToken:
+          type: string
+          example: 7f3c9a1e-4b2d-4f6a-9c1e-2d8b5a7e1f30
+        customerName:
+          type: string
+          example: أحمد محمد
+        customerPhone:
+          type: string
+          description: موبايل مصري (الأرقام العربي مقبولة وبتتحوّل للاتيني)
+          example: '01012345678'
+        areaId:
+          type: string
+        addressDetails:
+          type: string
+          example: شارع النيل، عمارة 5، الدور التالت
+        notes:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLine'
+        discountCode:
+          type: string
+    OrderOption:
+      type: object
+      properties:
+        groupName:
+          type: string
+        optionName:
+          type: string
+        pricing:
+          type: string
+          enum:
+            - PER_KG
+            - PER_UNIT
+            - FLAT
+        priceMinor:
+          type: integer
+        amountMinor:
+          type: integer
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+        productId:
+          type: string
+          nullable: true
+        isCustom:
+          type: boolean
+        name:
+          type: string
+        unit:
+          type: string
+          nullable: true
+        unitLabel:
+          type: string
+        saleMode:
+          type: string
+        quantity:
+          type: number
+        weightPerUnit:
+          type: number
+          nullable: true
+        listUnitPriceMinor:
+          type: integer
+          nullable: true
+        unitPriceMinor:
+          type: integer
+          nullable: true
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderOption'
+        lineTotalMinor:
+          type: integer
+          nullable: true
+          description: null للبند المكتوب بإيد العميل (لسه ملوش سعر)
+        serviceFeeMinor:
+          type: integer
+          description: رسوم الخدمة على البند (صفر لغير المطاعم). مش داخلة في lineTotalMinor
+        serviceFeeBps:
+          type: integer
+          nullable: true
+          description: نسبة الخدمة (500 = 5%) لو فيه رسوم
+        note:
+          type: string
+          nullable: true
+    OrderPricing:
+      type: object
+      properties:
+        grossMinor:
+          type: integer
+          description: قبل أي خصم
+        productDiscountMinor:
+          type: integer
+        subtotalMinor:
+          type: integer
+        invoiceDiscountMinor:
+          type: integer
+        discountLabel:
+          type: string
+          nullable: true
+        serviceFeeMinor:
+          type: integer
+          description: رسوم خدمة المطاعم (نسبة المطعم × أسعار أصنافه). بتتضاف فوق الإجمالي وخصم الفاتورة ما بيمسّهاش
+        deliveryFeeMinor:
+          type: integer
+        freeDeliveryApplied:
+          type: boolean
+        totalMinor:
+          type: integer
+          description: subtotal - invoiceDiscount + serviceFee + deliveryFee
+    CustomerOrder:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: integer
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+        customer:
+          type: object
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
+        area:
+          type: string
+        addressDetails:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        pricing:
+          $ref: '#/components/schemas/OrderPricing'
+        isEstimated:
+          type: boolean
+          description: فيه أوزان تقريبية (السعر النهائي بعد الوزن)
+        needsPricing:
+          type: boolean
+          description: فيه بند سعره بعد الشراء (مش محسوب في الإجمالي)
+    QuoteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                type: object
+                properties:
+                  productId:
+                    type: string
+                    nullable: true
+                  isCustom:
+                    type: boolean
+                  name:
+                    type: string
+                  quantity:
+                    type: number
+                  listUnitPriceMinor:
+                    type: integer
+                    nullable: true
+                  unitPriceMinor:
+                    type: integer
+                    nullable: true
+                  options:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderOption'
+                  lineTotalMinor:
+                    type: integer
+                    nullable: true
+                  lineDiscountMinor:
+                    type: integer
+                  serviceFeeMinor:
+                    type: integer
+                  serviceFeeBps:
+                    type: integer
+                    nullable: true
+            pricing:
+              allOf:
+                - $ref: '#/components/schemas/OrderPricing'
+              description: deliveryFeeMinor = null لو البلد ما اتحددتش
+            isEstimated:
+              type: boolean
+            needsPricing:
+              type: boolean
+            acceptingOrders:
+              type: boolean
+    CreateOrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            order:
+              $ref: '#/components/schemas/CustomerOrder'
+            whatsapp:
+              type: object
+              properties:
+                text:
+                  type: string
+                url:
+                  type: string
+                  description: رابط wa.me لرقم المتجر والنص جاهز
+            duplicate:
+              type: boolean
+    OrderListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: integer
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        area:
+          type: string
+        itemsCount:
+          type: integer
+        totalMinor:
+          type: integer
+        isEstimated:
+          type: boolean
+        needsPricing:
+          type: boolean
+        adminNote:
+          type: string
+          nullable: true
+        nextStatuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderStatus'
+    OrderListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            orders:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderListItem'
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
+    AdminOrder:
+      allOf:
+        - $ref: '#/components/schemas/CustomerOrder'
+        - type: object
+          properties:
+            areaId:
+              type: string
+              nullable: true
+            discountId:
+              type: string
+              nullable: true
+            adminNote:
+              type: string
+              nullable: true
+            cancelReason:
+              type: string
+              nullable: true
+            timeline:
+              type: object
+              properties:
+                createdAt:
+                  type: string
+                  format: date-time
+                confirmedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                outForDeliveryAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                deliveredAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                cancelledAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+            nextStatuses:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderStatus'
+            customerWhatsappUrl:
+              type: string
+            items:
+              type: array
+              description: بنود الأوردر + بيانات الشراء الداخلية (المحل، قسم المنيو، النسبة، اتشترى؟)
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/OrderItem'
+                  - type: object
+                    properties:
+                      categoryName:
+                        type: string
+                        nullable: true
+                      storeId:
+                        type: string
+                        nullable: true
+                      storeName:
+                        type: string
+                        nullable: true
+                      menuSection:
+                        type: string
+                        nullable: true
+                      commissionBps:
+                        type: integer
+                        nullable: true
+                      purchased:
+                        type: boolean
+                      purchasedAt:
+                        type: string
+                        format: date-time
+                        nullable: true
+                      actualCostMinor:
+                        type: integer
+                        nullable: true
+    AdminOrderResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            order:
+              $ref: '#/components/schemas/AdminOrder'
