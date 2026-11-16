@@ -1,0 +1,325 @@
+paths:
+  /discounts:
+    get:
+      summary: قايمة خصومات الفاتورة (كلها من غير pagination)
+      description: >
+        بترجع الخصومات مع حالة كل واحد: LIVE شغال دلوقتي، DISABLED موقوف، SCHEDULED لسه ما بدأش،
+        EXPIRED انتهى، EXHAUSTED استخداماته خلصت. النوع AUTOMATIC بيتطبّق لوحده وبيظهر للعميل في السلة،
+        والنوع CODE لازم العميل يكتب كوده. لو أكتر من خصم ينطبق على الفاتورة بيتطبّق الأفضل للعميل بس.
+      tags:
+        - Discounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum:
+              - CODE
+              - AUTOMATIC
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/DiscountStatus'
+      responses:
+        '200':
+          description: الخصومات
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      discounts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Discount'
+        '401':
+          description: مش مسجّل دخول
+    post:
+      summary: إضافة خصم فاتورة
+      description: >
+        kind = PERCENT: value بالـ basis points (1000 = 10%) ويقبل سقف maxDiscountMinor.
+        kind = FIXED: value بالقروش (2000 = 20 جنيه) ومالوش سقف. code = null يعني خصم أوتوماتيك.
+        الكود بيتحوّل لـ UPPERCASE وبيتقارن من غير حساسية لحالة الحروف. الفلوس بالقروش.
+      tags:
+        - Discounts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiscount'
+      responses:
+        '201':
+          description: اتضاف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountResponse'
+        '400':
+          description: بيانات غير صحيحة
+        '409':
+          description: الكود مستخدم (DISCOUNT_CODE_TAKEN)
+        '422':
+          description: قاعدة مكسورة (BAD_PERCENT، BAD_AMOUNT، BAD_CAP، BAD_DATES، BAD_MAX_USES)
+  /discounts/{id}:
+    get:
+      summary: تفاصيل خصم + إحصائيات الاستخدام الفعلي
+      description: الإحصائيات من الأوردرات غير الملغية (عددها وإجمالي الخصم اللي اتدفع).
+      tags:
+        - Discounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: الخصم
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountDetailResponse'
+        '404':
+          description: مش موجود (DISCOUNT_NOT_FOUND)
+    patch:
+      summary: تعديل خصم (إيقافه = isActive false)
+      description: >
+        التعديل على اللي اتبعت بس. لو غيّرت kind لـ FIXED السقف بيتشال لوحده.
+        مينفعش تنزّل maxUses أقل من usedCount (MAX_USES_BELOW_USED).
+        الأوردرات القديمة محتفظة بلقطتها فالتعديل ما بيغيّرش فيها حاجة.
+      tags:
+        - Discounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDiscount'
+      responses:
+        '200':
+          description: بعد التعديل
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountResponse'
+        '404':
+          description: مش موجود
+        '409':
+          description: الكود مستخدم
+        '422':
+          description: قاعدة مكسورة
+    delete:
+      summary: حذف خصم (لو عمره ما اتستخدم بس)
+      description: لو اتستخدم في أي أوردر بيرجع 409 DISCOUNT_IN_USE والحل إنك توقفه.
+      tags:
+        - Discounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: اتحذف
+        '404':
+          description: مش موجود
+        '409':
+          description: اتستخدم قبل كده (DISCOUNT_IN_USE)
+
+components:
+  schemas:
+    DiscountStatus:
+      type: string
+      enum:
+        - LIVE
+        - DISABLED
+        - SCHEDULED
+        - EXPIRED
+        - EXHAUSTED
+    Discount:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: خصم الصيف
+        type:
+          type: string
+          enum:
+            - CODE
+            - AUTOMATIC
+        code:
+          type: string
+          nullable: true
+          example: SUMMER10
+        kind:
+          type: string
+          enum:
+            - PERCENT
+            - FIXED
+        value:
+          type: integer
+          description: PERCENT بالـ basis points، FIXED بالقروش
+          example: 1000
+        minSubtotalMinor:
+          type: integer
+          description: أقل قيمة للفاتورة بعد خصومات المنتجات وقبل التوصيل
+        maxDiscountMinor:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+        maxUses:
+          type: integer
+          nullable: true
+        usedCount:
+          type: integer
+        remainingUses:
+          type: integer
+          nullable: true
+        status:
+          $ref: '#/components/schemas/DiscountStatus'
+    CreateDiscount:
+      type: object
+      required:
+        - name
+        - kind
+        - value
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+          nullable: true
+          description: 3-20 حرف إنجليزي أو رقم أو - _ . null = أوتوماتيك
+        kind:
+          type: string
+          enum:
+            - PERCENT
+            - FIXED
+        value:
+          type: integer
+        minSubtotalMinor:
+          type: integer
+          default: 0
+        maxDiscountMinor:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+          default: true
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+        maxUses:
+          type: integer
+          nullable: true
+    UpdateDiscount:
+      type: object
+      description: أي حقل من حقول الإضافة (واحد على الأقل)
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+          nullable: true
+        kind:
+          type: string
+          enum:
+            - PERCENT
+            - FIXED
+        value:
+          type: integer
+        minSubtotalMinor:
+          type: integer
+        maxDiscountMinor:
+          type: integer
+          nullable: true
+        isActive:
+          type: boolean
+        startsAt:
+          type: string
+          format: date-time
+          nullable: true
+        endsAt:
+          type: string
+          format: date-time
+          nullable: true
+        maxUses:
+          type: integer
+          nullable: true
+    DiscountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            discount:
+              $ref: '#/components/schemas/Discount'
+    DiscountDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            discount:
+              allOf:
+                - $ref: '#/components/schemas/Discount'
+                - type: object
+                  properties:
+                    stats:
+                      type: object
+                      properties:
+                        ordersCount:
+                          type: integer
+                        totalDiscountMinor:
+                          type: integer
