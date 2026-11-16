@@ -1,0 +1,225 @@
+paths:
+  /purchases:
+    get:
+      summary: قايمة الشراء المجمّعة (حسب المحل ثم الصنف)
+      description: >
+        بتجمّع بنود الأوردرات في الحالة المطلوبة (الافتراضي PREPARING). الصنف المتكرر في أكتر من أوردر
+        بيتجمّع في سطر واحد بإجمالي الكمية، بشرط نفس الوزن ونفس الخيارات (فرخة 2 كجم بتنظيف غير من غير تنظيف).
+        البنود المكتوبة بإيد العميل مش بتتجمّع. كل سطر فيه itemIds علشان تعلّمه "اشتريت"، وكل محل فيه
+        text جاهز تبعته للمحل (الأسطر اللي لسه ما اتشتراتش بس). الفلوس بالقروش.
+      tags:
+        - Purchases
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - PREPARING
+              - OUT_FOR_DELIVERY
+            default: PREPARING
+        - in: query
+          name: storeId
+          schema:
+            type: string
+          description: محل معيّن، أو none للبنود من غير محل
+        - in: query
+          name: hidePurchased
+          schema:
+            type: boolean
+          description: true = خبّي الأسطر اللي اتشترت كلها
+      responses:
+        '200':
+          description: القايمة
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingListResponse'
+        '401':
+          description: مش مسجّل دخول
+  /purchases/mark:
+    post:
+      summary: علّم بنود "اشتريت" مع التكلفة الفعلية (أو ألغِ التعليم)
+      description: >
+        ابعت itemIds بتاعة السطر المتجمّع. actualCostMinor هو اللي دفعته فعلًا للسطر كله،
+        وبيتوزّع على بنوده بالتناسب مع قيمتها والمجموع بيفضل مضبوط للقرش. من غير actualCostMinor
+        التكلفة المسجّلة قبل كده بتفضل زي ما هي. purchased = false بيمسح التعليم والتكلفة.
+        بنود الأوردرات الملغية مش بتتعلّم (422).
+      tags:
+        - Purchases
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemIds
+                - purchased
+              properties:
+                itemIds:
+                  type: array
+                  maxItems: 200
+                  items:
+                    type: string
+                purchased:
+                  type: boolean
+                actualCostMinor:
+                  type: integer
+                  nullable: true
+                  description: مع purchased = true بس
+      responses:
+        '200':
+          description: اتحدّث
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      updated:
+                        type: integer
+        '404':
+          description: فيه بنود مش موجودة (ITEM_NOT_FOUND)
+        '422':
+          description: فيه بنود تابعة لأوردر ملغي (ORDER_CANCELLED)
+
+components:
+  schemas:
+    PurchaseState:
+      type: string
+      enum:
+        - NONE
+        - PARTIAL
+        - ALL
+    PurchaseLine:
+      type: object
+      properties:
+        key:
+          type: string
+        isCustom:
+          type: boolean
+        productId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        unit:
+          type: string
+          nullable: true
+        unitLabel:
+          type: string
+        saleMode:
+          type: string
+        weightPerUnit:
+          type: number
+          nullable: true
+        options:
+          type: array
+          items:
+            type: string
+        categoryName:
+          type: string
+          nullable: true
+        menuSection:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+        quantityText:
+          type: string
+          example: كيلو ونص
+        note:
+          type: string
+          nullable: true
+        estimatedMinor:
+          type: integer
+        actualCostMinor:
+          type: integer
+          nullable: true
+        state:
+          $ref: '#/components/schemas/PurchaseState'
+        itemIds:
+          type: array
+          items:
+            type: string
+        orders:
+          type: array
+          items:
+            type: object
+            properties:
+              orderId:
+                type: string
+              number:
+                type: integer
+              customerName:
+                type: string
+              area:
+                type: string
+              quantity:
+                type: number
+    PurchaseStore:
+      type: object
+      properties:
+        storeId:
+          type: string
+          nullable: true
+        storeName:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseLine'
+        itemsCount:
+          type: integer
+        purchasedCount:
+          type: integer
+        state:
+          $ref: '#/components/schemas/PurchaseState'
+        estimatedMinor:
+          type: integer
+        actualCostMinor:
+          type: integer
+        text:
+          type: string
+          description: نص جاهز للمحل (اللي لسه ما اتشتراش)
+    ShoppingListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+            stores:
+              type: array
+              items:
+                $ref: '#/components/schemas/PurchaseStore'
+            totals:
+              type: object
+              properties:
+                itemsCount:
+                  type: integer
+                purchasedCount:
+                  type: integer
+                state:
+                  $ref: '#/components/schemas/PurchaseState'
+                estimatedMinor:
+                  type: integer
+                actualCostMinor:
+                  type: integer

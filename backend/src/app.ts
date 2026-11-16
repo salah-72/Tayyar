@@ -20,6 +20,7 @@ import catalogRouter from './modules/Catalog/catalogRouter';
 import ordersRouter from './modules/Orders/ordersRouter';
 import discountsRouter from './modules/Discounts/discountsRouter';
 import accountingRouter from './modules/Accounting/accountingRouter';
+import purchasesRouter from './modules/Purchases/purchasesRouter';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/products', productsRouter);
 app.use('/orders', ordersRouter);
 app.use('/discounts', discountsRouter);
 app.use('/accounting', accountingRouter);
+app.use('/purchases', purchasesRouter);
 
 app.use(notFound);
 app.use(errorHandler);
