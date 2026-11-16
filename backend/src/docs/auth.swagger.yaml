@@ -1,29 +1,44 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
-  title: Agricultural Store API - Authentication & Admin Module
+  title: Admin Auth API
   version: 1.0.0
-  description: Secure JWT Authentication, Cookie-Based Session Management, and Admin Management API Documentation.
+  description: نظام إدارة المصادقة والصلاحيات للمشرفين (Admin Authentication & Authorization API)
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: الخادم المحلي (Local Development Server)
+
+tags:
+  - name: Auth
+    description: العمليات المتعلقة بالمصادقة وإدارة المشرفين
 
 paths:
-  /auth/login:
+  /auth/newAdmin:
     post:
-      summary: Admin Login (Generates Access Token & Sets HttpOnly Refresh Token Cookie)
-      tags:
-        - Authentication
+      summary: إنشاء مشرف جديد (يتطلب صلاحية مشرف حالي)
+      tags: [Auth]
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginInput'
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: admin_user
+                password:
+                  type: string
+                  format: password
+                  example: StrongP@ss123
       responses:
-        '200':
-          description: Login successful, access token returned and refresh cookie set
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: refreshToken=abc123xyz...; Path=/auth; HttpOnly; Secure; SameSite=Strict
+        '201':
+          description: تم إنشاء المشرف بنجاح
           content:
             application/json:
               schema:
@@ -34,23 +49,79 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
+        '401':
+          description: غير مصرح (رمز الوصول مفقود أو غير صالح)
+        '409':
+          description: اسم المستخدم مستخدم مسبقاً
+
+  /auth/login:
+    post:
+      summary: تسجيل دخول المشرف
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: admin_user
+                password:
+                  type: string
+                  format: password
+                  example: StrongP@ss123
+      responses:
+        '200':
+          description: تم تسجيل الدخول بنجاح وإرسال Refresh Token في ملف تعريف الارتباط (Cookie)
+          headers:
+            Set-Cookie:
+              description: كوكيز تحتوي على refreshToken
+              schema:
+                type: string
+                example: refreshToken=abc123xyz; Path=/auth; HttpOnly; Secure; SameSite=Lax
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    type: string
+                    example: success
                   user:
-                    $ref: '#/components/schemas/AdminResponse'
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: admin_user
                   accessToken:
                     type: string
-                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC...
         '401':
-          description: Invalid username or password
+          description: اسم المستخدم أو كلمة المرور غير صحيحة
+        '429':
+          description: محاولات تسجيل دخول كثيرة جداً، يرجى المحاولة لاحقاً
 
   /auth/logout:
     post:
-      summary: Admin Logout (Revokes Refresh Token & Clears Cookie)
-      tags:
-        - Authentication
+      summary: تسجيل الخروج (حذف Refresh Token من قاعدة البيانات والكوكيز)
+      tags: [Auth]
+      security:
+        - BearerAuth: []
       responses:
         '200':
-          description: Logged out successfully, refresh cookie cleared
+          description: تم تسجيل الخروج بنجاح
           content:
             application/json:
               schema:
@@ -61,16 +132,15 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
                   message:
                     type: string
-                    example: 'logout successfully'
+                    example: logout successfully
 
   /auth/refresh:
     post:
-      summary: Refresh Access Token Using Stored Refresh Token Cookie or Body
-      tags:
-        - Authentication
+      summary: تجديد رمز الوصول (Access Token) باستخدام Refresh Token
+      tags: [Auth]
       requestBody:
         required: false
         content:
@@ -80,10 +150,10 @@ paths:
               properties:
                 refreshToken:
                   type: string
-                  description: Optional fallback refresh token in request body if cookies are restricted
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC...
       responses:
         '200':
-          description: Access token refreshed successfully
+          description: تم إصدار Access Token جديد بنجاح
           content:
             application/json:
               schema:
@@ -94,25 +164,31 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
                   user:
-                    $ref: '#/components/schemas/AdminResponse'
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: admin_user
                   accessToken:
                     type: string
-                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC...
         '401':
-          description: Refresh token missing, expired, or invalid
+          description: الرمز غير موجود أو منتهي الصلاحية
 
   /auth/me:
     get:
-      summary: Get Currently Authenticated Admin Profile
-      tags:
-        - Authentication
+      summary: جلب بيانات المشرف الحالي المسجل دخوله
+      tags: [Auth]
       security:
         - BearerAuth: []
       responses:
         '200':
-          description: Admin profile retrieved successfully
+          description: تم جلب البيانات بنجاح
           content:
             application/json:
               schema:
@@ -123,17 +199,23 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
                   user:
-                    $ref: '#/components/schemas/AdminResponse'
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: admin_user
         '401':
-          description: Unauthorized (Token missing or invalid)
+          description: غير مصرح
 
   /auth/password:
     patch:
-      summary: Update Admin Password (Revokes All Active Refresh Sessions)
-      tags:
-        - Authentication
+      summary: تحديث كلمة المرور للمشرف الحالي
+      tags: [Auth]
       security:
         - BearerAuth: []
       requestBody:
@@ -141,10 +223,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePasswordInput'
+              type: object
+              required:
+                - oldPassword
+                - newPassword
+                - passwordConfirm
+              properties:
+                oldPassword:
+                  type: string
+                  format: password
+                  example: OldP@ss123
+                newPassword:
+                  type: string
+                  format: password
+                  example: NewP@ss456
+                passwordConfirm:
+                  type: string
+                  format: password
+                  example: NewP@ss456
       responses:
         '200':
-          description: Password updated successfully, sessions revoked
+          description: تم تغيير كلمة المرور بنجاح، يرجى تسجيل الدخول مرة أخرى
           content:
             application/json:
               schema:
@@ -155,23 +254,22 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
                   message:
                     type: string
-                    example: 'password changed successfully, please log in again'
+                    example: password changed successfully, please log in again
         '401':
-          description: Unauthorized or incorrect old password
+          description: كلمة المرور القديمة خاطئة
 
   /auth/admins:
     get:
-      summary: List All System Admins
-      tags:
-        - Admins Management
+      summary: استعراض جميع المشرفين
+      tags: [Auth]
       security:
         - BearerAuth: []
       responses:
         '200':
-          description: Admins retrieved successfully
+          description: قائمة المشرفين
           content:
             application/json:
               schema:
@@ -182,55 +280,26 @@ paths:
                     example: true
                   status:
                     type: string
-                    example: 'success'
+                    example: success
                   data:
                     type: object
                     properties:
                       admins:
                         type: array
                         items:
-                          $ref: '#/components/schemas/AdminResponse'
-        '401':
-          description: Unauthorized
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            username:
+                              type: string
+                              example: admin_user
 
-    post:
-      summary: Create New Admin Account
-      tags:
-        - Admins Management
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAdminInput'
-      responses:
-        '201':
-          description: Admin created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  status:
-                    type: string
-                    example: 'success'
-        '400':
-          description: Validation error
-        '401':
-          description: Unauthorized
-        '409':
-          description: Username is already in use
-
-  /auth/admins/{adminId}:
+  /auth/{adminId}:
     delete:
-      summary: Delete Admin Account by ID
-      tags:
-        - Admins Management
+      summary: حذف مشرف معين (مع التحقق ألا يكون هو المشرف الوحيد)
+      tags: [Auth]
       security:
         - BearerAuth: []
       parameters:
@@ -239,15 +308,14 @@ paths:
           required: true
           schema:
             type: integer
-            minimum: 1
-          description: Target Admin ID to delete
+          description: الرقم المعرف للمشرف المراد حذفه
       responses:
         '204':
-          description: Admin deleted successfully (No Content)
+          description: تم الحذف بنجاح (بدون محتوى)
+        '400':
+          description: خطأ (مثل أنك المشرف الوحيد المتبقي في النظام)
         '401':
-          description: Unauthorized
-        '404':
-          description: Admin not found
+          description: غير مصرح
 
 components:
   securitySchemes:
@@ -255,56 +323,4 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
-  schemas:
-    LoginInput:
-      type: object
-      required:
-        - username
-        - password
-      properties:
-        username:
-          type: string
-          example: 'admin'
-        password:
-          type: string
-          example: 'SecureP@ss123'
-
-    CreateAdminInput:
-      type: object
-      required:
-        - username
-        - password
-      properties:
-        username:
-          type: string
-          minLength: 3
-          example: 'warehouse_manager'
-        password:
-          type: string
-          minLength: 6
-          example: 'StrongPassword!2026'
-
-    UpdatePasswordInput:
-      type: object
-      required:
-        - oldPassword
-        - newPassword
-      properties:
-        oldPassword:
-          type: string
-          example: 'SecureP@ss123'
-        newPassword:
-          type: string
-          minLength: 6
-          example: 'NewSecurePassword!2026'
-
-    AdminResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        username:
-          type: string
-          example: 'admin'
+      description: أدخل رمز الوصول (Access Token) المسبوق بكلمة Bearer هكذا -> Bearer <token>
