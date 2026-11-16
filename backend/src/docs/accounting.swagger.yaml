@@ -1,0 +1,263 @@
+paths:
+  /accounting/stores:
+    get:
+      summary: حساب يوم واحد لكل المطاعم
+      description: >
+        لكل مطعم: salesMinor = اللي بتدفعه للمطعم (أسعار المنيو بالظبط، مجموع بنوده في الأوردرات غير الملغية
+        اللي اتعملت في اليوم ده بتوقيت المتجر)، و serviceFeeMinor = ربحك (رسوم الخدمة اللي اتحصّلت من العملاء
+        فوق أسعار المنيو، متخزّنة مع كل بند وقت الطلب). الأوردر محسوب من وقت إنشائه، حتى لو لسه ما اتسلّمش.
+        الحالة: OPEN لسه ما دفعتش للمطعم، SETTLED اتحاسب والأرقام زي ما هي، CHANGED اتحاسب لكن الأرقام
+        اتغيّرت بعدها (أوردر اتلغى أو اتضاف). خصم الفاتورة مش بيتوزّع على المطاعم. الفلوس بالقروش.
+      tags:
+        - Accounting
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            example: '2026-06-15'
+          description: YYYY-MM-DD (الافتراضي النهارده بتوقيت المتجر)
+      responses:
+        '200':
+          description: حساب اليوم
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DayAccountResponse'
+        '401':
+          description: مش مسجّل دخول
+  /accounting/stores/{storeId}:
+    get:
+      summary: كشف حساب مطعم على فترة (لحد 93 يوم)
+      description: صف لكل يوم فيه مبيعات أو محاسبة مسجّلة، وإجماليات الفترة والمستحق اللي لسه ما اتحاسبش.
+      tags:
+        - Accounting
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: storeId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            example: '2026-06-01'
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            example: '2026-06-30'
+      responses:
+        '200':
+          description: الكشف
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRangeResponse'
+        '404':
+          description: المحل مش موجود
+        '422':
+          description: المحل مش مطعم (NOT_A_RESTAURANT)
+  /accounting/settlements:
+    post:
+      summary: دفعت للمطعم مستحقه عن يوم (اتحاسبت)
+      description: >
+        بيثبّت أرقام اليوم (اللي بتدفعه للمطعم وربحك من الرسوم) لحظة الضغط. بعد كده لو الأرقام الحية اختلفت
+        الحالة بتبقى CHANGED. مينفعش يوم مستقبلي، ولا يوم من غير مبيعات، ولا يوم اتحاسب قبل كده.
+      tags:
+        - Accounting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - storeId
+                - date
+              properties:
+                storeId:
+                  type: string
+                date:
+                  type: string
+                  example: '2026-06-15'
+                note:
+                  type: string
+      responses:
+        '201':
+          description: اتحاسب
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      settlement:
+                        $ref: '#/components/schemas/Settlement'
+        '404':
+          description: المحل مش موجود
+        '409':
+          description: اليوم اتحاسب قبل كده (ALREADY_SETTLED)
+        '422':
+          description: FUTURE_DATE أو NOTHING_TO_SETTLE أو NOT_A_RESTAURANT
+  /accounting/settlements/{id}:
+    delete:
+      summary: إلغاء محاسبة (علشان تتعمل من جديد)
+      tags:
+        - Accounting
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: اتلغت
+        '404':
+          description: مش موجودة (SETTLEMENT_NOT_FOUND)
+
+components:
+  schemas:
+    SettlementState:
+      type: string
+      enum:
+        - OPEN
+        - SETTLED
+        - CHANGED
+    Settlement:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          example: '2026-06-15'
+        salesMinor:
+          type: integer
+          description: اللي دفعته للمطعم (أسعار المنيو)
+        serviceFeeMinor:
+          type: integer
+          description: ربحك من رسوم الخدمة
+        settledAt:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+          nullable: true
+    DayRow:
+      type: object
+      properties:
+        date:
+          type: string
+        salesMinor:
+          type: integer
+          description: اللي بتدفعه للمطعم (أسعار المنيو)
+        serviceFeeMinor:
+          type: integer
+          description: ربحك (رسوم الخدمة اللي اتحصّلت من العملاء)
+        ordersCount:
+          type: integer
+        itemsCount:
+          type: integer
+        state:
+          $ref: '#/components/schemas/SettlementState'
+        settlement:
+          allOf:
+            - $ref: '#/components/schemas/Settlement'
+          nullable: true
+    DayAccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            date:
+              type: string
+            stores:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/DayRow'
+                  - type: object
+                    properties:
+                      storeId:
+                        type: string
+                      storeName:
+                        type: string
+                      serviceFeeBps:
+                        type: integer
+                        description: نسبة الخدمة الحالية للمطعم (500 = 5%)
+            totals:
+              type: object
+              properties:
+                salesMinor:
+                  type: integer
+                serviceFeeMinor:
+                  type: integer
+                ordersCount:
+                  type: integer
+                openCount:
+                  type: integer
+                  description: عدد المطاعم اللي ليها مبيعات ولسه ما اتحاسبتش (أو الأرقام اتغيّرت)
+    StoreRangeResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        data:
+          type: object
+          properties:
+            store:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                serviceFeeBps:
+                  type: integer
+            from:
+              type: string
+            to:
+              type: string
+            days:
+              type: array
+              items:
+                $ref: '#/components/schemas/DayRow'
+            totals:
+              type: object
+              properties:
+                salesMinor:
+                  type: integer
+                serviceFeeMinor:
+                  type: integer
+                ordersCount:
+                  type: integer
+                unsettledSalesMinor:
+                  type: integer
+                  description: اللي لسه ما دفعتوش للمطعم (أيام ما اتحاسبتش أو الأرقام اتغيّرت)

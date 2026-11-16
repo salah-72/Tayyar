@@ -19,6 +19,7 @@ import uploadsRouter from './modules/Uploads/uploadsRouter';
 import catalogRouter from './modules/Catalog/catalogRouter';
 import ordersRouter from './modules/Orders/ordersRouter';
 import discountsRouter from './modules/Discounts/discountsRouter';
+import accountingRouter from './modules/Accounting/accountingRouter';
 
 const app = express();
 
@@ -69,6 +70,7 @@ app.use('/option-groups', optionGroupsRouter);
 app.use('/products', productsRouter);
 app.use('/orders', ordersRouter);
 app.use('/discounts', discountsRouter);
+app.use('/accounting', accountingRouter);
 
 app.use(notFound);
 app.use(errorHandler);
