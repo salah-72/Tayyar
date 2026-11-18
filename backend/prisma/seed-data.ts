@@ -25,6 +25,7 @@ export type SeedProduct = {
   discountKind?: 'PERCENT' | 'FIXED' | 'NONE';
   discountValue?: number;
   isFeatured?: boolean;
+  optionGroupSlugs?: string[];
 };
 
 export const categories = [
@@ -42,6 +43,22 @@ export const categories = [
 ];
 
 export const stores = [
+  // موردين (مش بيظهروا للعميل - بس بيستخدموا في قائمة المشتريات)
+  {
+    slug: 'el-amana',
+    name: 'الأمانة',
+    type: 'SUPPLIER' as const,
+    commissionBps: 0,
+    sortOrder: 10,
+  },
+  {
+    slug: 'aklyano',
+    name: 'اكليانو',
+    type: 'SUPPLIER' as const,
+    commissionBps: 0,
+    sortOrder: 11,
+  },
+  // مطاعم (بتظهر للعميل كمنيو)
   {
     slug: 'el-zahraa',
     name: 'كشري الزهراء',
@@ -159,6 +176,7 @@ export const products: SeedProduct[] = [
   // لحوم وفراخ
   {
     categorySlug: 'meat',
+    storeSlug: 'el-amana',
     name: 'لحمة من الأمانة',
     unit: 'KG',
     saleMode: 'WEIGHT',
@@ -170,6 +188,7 @@ export const products: SeedProduct[] = [
   },
   {
     categorySlug: 'meat',
+    storeSlug: 'aklyano',
     name: 'لحمة من اكليانو',
     unit: 'KG',
     saleMode: 'WEIGHT',
@@ -189,6 +208,7 @@ export const products: SeedProduct[] = [
     qtyStep: 1,
     weightChoices: [1.5, 1.8, 2, 2.2, 2.5],
     isFeatured: true,
+    optionGroupSlugs: ['chicken-cleaning'],
   },
   {
     categorySlug: 'chicken',
@@ -221,6 +241,7 @@ export const products: SeedProduct[] = [
     description: 'طازج - اختار التجهيز',
     minQty: 1,
     qtyStep: 0.5,
+    optionGroupSlugs: ['fish-prep'],
   },
   {
     categorySlug: 'fish',
@@ -231,6 +252,7 @@ export const products: SeedProduct[] = [
     description: 'طازج',
     minQty: 1,
     qtyStep: 0.5,
+    optionGroupSlugs: ['fish-prep'],
   },
   {
     categorySlug: 'fish',
@@ -241,6 +263,7 @@ export const products: SeedProduct[] = [
     description: 'طازج',
     minQty: 1,
     qtyStep: 0.5,
+    optionGroupSlugs: ['fish-prep'],
   },
   {
     categorySlug: 'fish',
@@ -251,6 +274,7 @@ export const products: SeedProduct[] = [
     description: 'جمبري متوسط',
     minQty: 1,
     qtyStep: 0.5,
+    optionGroupSlugs: ['fish-prep'],
   },
 
   // بقالة
@@ -364,5 +388,73 @@ export const products: SeedProduct[] = [
     priceMinor: 6000,
     minQty: 1,
     qtyStep: 1,
+  },
+];
+
+// مجموعات الخيارات (تجهيز السمك / تنضيف الفراخ)
+// ⚠️ أسعار التجهيز للسمك أرقام مبدئية - عدّلها من لوحة الأدمن
+export const optionGroups = [
+  {
+    slug: 'fish-prep',
+    name: 'تجهيز السمك',
+    minSelect: 0,
+    maxSelect: 1,
+    sortOrder: 1,
+    options: [
+      {
+        name: 'تنضيف فقط',
+        pricing: 'PER_KG' as const,
+        priceMinor: 500,
+        sortOrder: 1,
+      },
+      {
+        name: 'تحمير',
+        pricing: 'PER_KG' as const,
+        priceMinor: 1500,
+        sortOrder: 2,
+      },
+      {
+        name: 'شوي',
+        pricing: 'PER_KG' as const,
+        priceMinor: 2000,
+        sortOrder: 3,
+      },
+    ],
+  },
+  {
+    slug: 'chicken-cleaning',
+    name: 'تنضيف الفراخ',
+    minSelect: 0,
+    maxSelect: 1,
+    sortOrder: 2,
+    options: [
+      // 15 ج للفرخة الواحدة
+      {
+        name: 'تنضيف',
+        pricing: 'PER_UNIT' as const,
+        priceMinor: 1500,
+        sortOrder: 1,
+      },
+    ],
+  },
+];
+
+// خصومات (النسبة بالـ bps: 1000 = 10%)
+export const discounts = [
+  {
+    name: 'خصم الترحيب',
+    code: 'WELCOME10',
+    kind: 'PERCENT' as const,
+    value: 1000,
+    minSubtotalMinor: 10000,
+    maxDiscountMinor: 5000,
+  },
+  {
+    name: 'خصم 20 جنيه على الطلبات فوق 300',
+    code: null,
+    kind: 'FIXED' as const,
+    value: 2000,
+    minSubtotalMinor: 30000,
+    maxDiscountMinor: null,
   },
 ];
