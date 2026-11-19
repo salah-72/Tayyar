@@ -7,6 +7,7 @@ import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
 import { BannerCarousel, defaultBanners } from "@/components/store/BannerCarousel";
 import { SectionHeader, seeAllClass } from "@/components/store/SectionHeader";
 import { ProductCard } from "@/components/store/ProductCard";
+import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { categoryIcon, categoryTone } from "@/components/store/CategoryIcon";
 
 export const Route = createFileRoute("/")({
@@ -124,6 +125,10 @@ function HomePage() {
           })}
         </div>
       </section>
+
+      <div className="mt-5 px-4 md:px-6">
+        <CustomItemRequest />
+      </div>
 
       {offers.length > 0 && (
         <ProductRow title="عروض مميزة" products={offers} cardProps={cardProps} />

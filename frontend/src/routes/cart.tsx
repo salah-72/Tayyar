@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { AlertTriangle, Loader2, PencilLine, ShoppingCart, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
@@ -8,6 +7,7 @@ import { badProductId, useQuote } from "@/lib/quote";
 import { formatMoney, formatQty } from "@/lib/money";
 import { stepQty } from "@/lib/pricing";
 import { StoreLayout } from "@/components/store/StoreLayout";
+import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { ProductImage } from "@/components/store/ProductImage";
 import { QtyStepper } from "@/components/store/QtyStepper";
 import { PricingSummary } from "@/components/store/PricingSummary";
@@ -59,7 +59,7 @@ function CartPage() {
           </Link>
         </div>
         <div className="mx-4 mt-4 md:mx-6">
-          <CustomItemForm />
+          <CustomItemRequest />
         </div>
       </StoreLayout>
     );
@@ -97,7 +97,7 @@ function CartPage() {
             />
           ))}
 
-          <CustomItemForm />
+          <CustomItemRequest />
         </div>
 
         <aside className="hidden lg:block">
@@ -231,47 +231,5 @@ function CartRow({
         </div>
       </div>
     </div>
-  );
-}
-
-function CustomItemForm() {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [note, setNote] = useState("");
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary-soft/40 p-4 text-start"
-      >
-        <PencilLine className="size-5 text-primary" />
-        <div>
-          <p className="text-sm font-semibold text-primary-deep">عايز حاجة مش موجودة؟</p>
-          <p className="text-xs text-muted-foreground">اكتبها وإحنا نشتريهالك، وسعرها يتحسب بعد الشراء</p>
-        </div>
-      </button>
-    );
-  }
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (text.trim().length < 2) { toast.error("اكتب اسم الصنف"); return; }
-        cart.addCustom(text.trim(), note.trim() || undefined);
-        setText("");
-        setNote("");
-        setOpen(false);
-        toast.success("اتضاف للسلة");
-      }}
-      className="space-y-2 rounded-2xl bg-card p-4 shadow-card"
-    >
-      <p className="text-sm font-semibold">صنف مش موجود</p>
-      <input value={text} onChange={(e) => setText(e.target.value)} maxLength={200} placeholder="مثال: ٢ كيلو مانجا عويسي" className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary" />
-      <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="ملاحظة (اختياري)" className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary" />
-      <div className="flex gap-2">
-        <button type="submit" className="h-10 flex-1 rounded-xl bg-primary text-sm font-semibold text-primary-foreground">أضف للسلة</button>
-        <button type="button" onClick={() => setOpen(false)} className="h-10 rounded-xl px-4 text-sm text-muted-foreground">إلغاء</button>
-      </div>
-    </form>
   );
 }

@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import { catalogQuery, normalizeArabic, useCatalog } from "@/lib/catalog";
 import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
+import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { categoryIcon } from "@/components/store/CategoryIcon";
 import { cn } from "@/lib/utils";
 
@@ -133,21 +134,27 @@ function CategoriesPage() {
           <div className="rounded-3xl border border-dashed bg-card/60 px-6 py-16 text-center">
             <p className="font-semibold">{q ? "مفيش منتجات بالاسم ده" : "القسم ده لسه فاضي"}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              مش لاقي اللي محتاجه؟ اكتبه في السلة وإحنا نشتريهولك.
+              مش لاقي اللي محتاجه؟ اكتبه وإحنا نشتريهولك.
             </p>
-            <Link to="/cart" className="mt-4 inline-block rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
-              اطلب حاجة مش موجودة
-            </Link>
+            <div className="mx-auto mt-4 max-w-md text-start">
+              {/* key resets the form when the search text changes; with no results it opens pre-filled with the query */}
+              <CustomItemRequest key={q ?? ""} defaultText={q ?? ""} defaultOpen={!!q} />
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {products.map((p) => {
-              const i = p.categoryId ? catIndex.get(p.categoryId) ?? activeIndex : 1;
-              return (
-                <ProductCard key={p.id} p={p} slug={p.storeId ? "restaurant" : c.categories[i]?.slug} toneIndex={i} />
-              );
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {products.map((p) => {
+                const i = p.categoryId ? catIndex.get(p.categoryId) ?? activeIndex : 1;
+                return (
+                  <ProductCard key={p.id} p={p} slug={p.storeId ? "restaurant" : c.categories[i]?.slug} toneIndex={i} />
+                );
+              })}
+            </div>
+            <div className="mt-6">
+              <CustomItemRequest />
+            </div>
+          </>
         )}
       </div>
     </StoreLayout>
