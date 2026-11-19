@@ -133,7 +133,7 @@ function HomePage() {
 
       {c.stores.length > 0 && (
         <section id="restaurants" className="mt-7 scroll-mt-4 px-4 md:px-6">
-          <SectionHeader title="المطاعم" />
+          <SectionHeader title="المطاعم والمحلات" action={<Link to="/stores" className={seeAllClass}>عرض الكل</Link>} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {c.stores.map((s, i) => {
               const count = c.products.filter((p) => p.storeId === s.id).length;

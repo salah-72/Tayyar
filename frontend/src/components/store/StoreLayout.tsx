@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Home, LayoutGrid, ShoppingCart } from "lucide-react";
+import { Home, LayoutGrid, ShoppingCart, Store } from "lucide-react";
 import { useCartCount } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 import { ProductSheetHost } from "./ProductSheet";
@@ -18,6 +18,7 @@ export function StoreLayout({ children, hideNav = false }: { children: ReactNode
 const NAV = [
   { to: "/", label: "الرئيسية", icon: Home, exact: true },
   { to: "/categories", label: "الأقسام", icon: LayoutGrid, exact: false },
+  { to: "/stores", label: "المطاعم والمحلات", icon: Store, exact: false },
   { to: "/cart", label: "السلة", icon: ShoppingCart, exact: false },
 ] as const;
 
@@ -25,13 +26,13 @@ function BottomNav() {
   const count = useCartCount();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 shadow-float backdrop-blur pb-safe">
-      <div className="mx-auto grid h-16 max-w-md grid-cols-3 px-4">
+      <div className="mx-auto grid h-16 max-w-lg grid-cols-4 px-2">
         {NAV.map((item) => (
           <Link
             key={item.to}
             to={item.to}
             activeOptions={{ exact: item.exact }}
-            className="group flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground"
+            className="group flex min-w-0 flex-col items-center justify-center gap-0.5 whitespace-nowrap text-[11px] font-medium text-muted-foreground"
             activeProps={{ className: "is-active text-primary" }}
           >
             <span className="relative grid h-8 w-14 place-items-center rounded-full transition-colors group-[.is-active]:bg-primary-soft">
