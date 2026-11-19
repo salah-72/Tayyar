@@ -1,26 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getBridgeSecret, getUpstream } from "@/lib/server-env";
 
 // Same-origin bridge to the Tayyar backend. The backend's CORS list does not include this
 // site, so the browser talks to us and we forward the request. The backend itself verifies
 // every admin bearer token; this route adds no privileges.
-const UPSTREAM = "https://tayyar-production-85650ef5.up.railway.app";
 const PREFIX = "/api/public/tayyar";
 const FORWARD_REQ = ["authorization", "content-type", "cookie", "accept", "accept-language"];
 const DROP_RES = new Set(["content-encoding", "content-length", "transfer-encoding", "set-cookie", "connection"]);
+
+// Real client IP as set by Vercel's edge (it overwrites anything the client sends). Do not read
+// cf-connecting-ip here: on Vercel nobody sets it, so a client could forge it.
+function clientIpOf(request: Request): string | null {
+  const h = request.headers;
+  const v = h.get("x-vercel-forwarded-for") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0];
+  return v?.trim() || null;
+}
 
 async function proxy({ request, params }: { request: Request; params: { _splat?: string } }) {
   const url = new URL(request.url);
   const path = (params._splat ?? "").replace(/^\/+/, "");
   if (path.includes("..")) return new Response("Bad path", { status: 400 });
-  const target = `${UPSTREAM}/${path}${url.search}`;
+  const target = `${getUpstream()}/${path}${url.search}`;
 
   const headers = new Headers();
   for (const h of FORWARD_REQ) {
     const v = request.headers.get(h);
     if (v) headers.set(h, v);
   }
-  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for");
-  if (ip) headers.set("x-forwarded-for", ip);
+  // Tell the backend who the real visitor is, proven by a secret only this server and the backend know.
+  const secret = getBridgeSecret();
+  const ip = clientIpOf(request);
+  if (secret && ip) {
+    headers.set("x-bridge-secret", secret);
+    headers.set("x-client-ip", ip);
+  }
 
   const hasBody = !["GET", "HEAD"].includes(request.method);
   let upstream: Response;

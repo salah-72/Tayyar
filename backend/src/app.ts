@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import env from './config/env';
 import { buildSwaggerDocument } from './config/swagger';
+import { attachClientIp, rateLimitKey } from './common/middlewares/clientIp';
 import settingsRouter from './modules/Settings/settingsRouter';
 import areasRouter from './modules/Areas/areasRouter';
 import storesRouter from './modules/Stores/storesRouter';
@@ -29,6 +30,7 @@ const swaggerDocument = buildSwaggerDocument();
 const limiter = rateLimit({
   limit: 300,
   windowMs: 60000,
+  keyGenerator: rateLimitKey,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
@@ -47,6 +49,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(attachClientIp);
 app.use(limiter);
 app.use(express.json({ limit: '100kb' }));
 app.use(urlencoded({ extended: true }));
@@ -58,6 +61,14 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
+
+app.get('/whoami-ip', (req, res) =>
+  res.json({
+    ip: res.locals.clientIp,
+    viaBridge: res.locals.viaBridge,
+    socketIp: req.ip,
+  }),
+);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/auth', authRouter);

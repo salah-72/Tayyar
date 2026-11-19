@@ -3,6 +3,7 @@ import appError from '../../common/utils/appError';
 import catchAsync from '../../common/utils/catchAsync';
 import { prisma } from '../../config/postgres';
 import { Request, Response, NextFunction } from 'express';
+import { rateLimitKey } from '../../common/middlewares/clientIp';
 
 export const checkNoOfAdmins = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -17,6 +18,7 @@ export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
   skipSuccessfulRequests: true,
+  keyGenerator: rateLimitKey,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
