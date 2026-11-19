@@ -17,7 +17,11 @@ import {
   updatePasswordValidation,
 } from './authValidation';
 import { Router } from 'express';
-import { checkNoOfAdmins, loginLimiter } from './authMiddlewares';
+import {
+  checkNoOfAdmins,
+  loginLimiter,
+  loginUsernameLimiter,
+} from './authMiddlewares';
 
 const router = Router();
 
@@ -31,6 +35,7 @@ router.post(
 router.post(
   '/login',
   loginLimiter,
+  loginUsernameLimiter,
   validateRequest({ body: loginValidation }),
   login,
 );

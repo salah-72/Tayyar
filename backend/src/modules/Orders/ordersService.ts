@@ -41,6 +41,9 @@ import type {
   UpdateStatusInput,
 } from './ordersValidation';
 
+/** أقصى عدد أوردرات لنفس رقم الموبايل في الساعة (بيمنع الأوردرات الوهمية المتكررة) */
+const MAX_ORDERS_PER_PHONE_PER_HOUR = 5;
+
 const notFound = () => new appError('الأوردر مش موجود', 404, 'ORDER_NOT_FOUND');
 
 /** أخطاء التسعير (صنف مش متاح، كمية غلط…) بترجع 422 بكود ثابت للـ frontend */
@@ -195,6 +198,19 @@ export const ordersService = {
         'المتجر مش بيستقبل أوردرات دلوقتي',
         503,
         'ORDERS_CLOSED',
+      );
+
+    const recentFromPhone = await prisma.order.count({
+      where: {
+        customerPhone: input.customerPhone,
+        createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+      },
+    });
+    if (recentFromPhone >= MAX_ORDERS_PER_PHONE_PER_HOUR)
+      throw new appError(
+        'الرقم ده عمل طلبات كتير في آخر ساعة، كلمنا على واتساب لو محتاج حاجة',
+        429,
+        'TOO_MANY_ORDERS',
       );
 
     try {

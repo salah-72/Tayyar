@@ -14,6 +14,14 @@ export const checkNoOfAdmins = catchAsync(
   },
 );
 
+const usernameKey = (req: Request, res: Response): string => {
+  const u = String(req.body?.username ?? '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 30);
+  return u ? `user:${u}` : rateLimitKey(req, res);
+};
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -25,5 +33,23 @@ export const loginLimiter = rateLimit({
     success: false,
     status: 'fail',
     message: 'Too many login attempts, please try again after 15 minutes',
+  },
+});
+
+/**
+ * سقف على المحاولات الفاشلة لنفس اسم المستخدم من أي IP (بيبطّأ التخمين الموزّع).
+ * الحد عالي (30 في الساعة) عشان حد يعرف اسم الأدمن ما يقدرش يقفل عليه بسهولة.
+ */
+export const loginUsernameLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  skipSuccessfulRequests: true,
+  keyGenerator: usernameKey,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    status: 'fail',
+    message: 'Too many login attempts, please try again later',
   },
 });

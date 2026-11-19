@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { validateRequest } from '../../common/middlewares/validation';
 import { protect } from '../Auth/authController';
 import {
+  discountGuessLimiter,
+  orderLimiter,
+  quoteLimiter,
+} from '../../common/middlewares/limiters';
+import {
   createOrder,
   getOrder,
   listOrders,
@@ -21,8 +26,20 @@ import {
 
 const router = Router();
 
-router.post('/quote', validateRequest({ body: quoteValidation }), quoteOrder);
-router.post('/', validateRequest({ body: createOrderValidation }), createOrder);
+router.post(
+  '/quote',
+  quoteLimiter,
+  discountGuessLimiter,
+  validateRequest({ body: quoteValidation }),
+  quoteOrder,
+);
+router.post(
+  '/',
+  orderLimiter,
+  discountGuessLimiter,
+  validateRequest({ body: createOrderValidation }),
+  createOrder,
+);
 
 router.get(
   '/',

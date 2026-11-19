@@ -150,6 +150,7 @@ const EN_TO_AR: Array<[RegExp, string]> = [
   [/Invalid username or password/i, "اسم المستخدم أو كلمة السر غلط"],
   [/no token provided|Invalid or expired token|log in again/i, "انتهت الجلسة، سجّل دخول تاني"],
   [/too many requests/i, "طلبات كتير ورا بعض، استنى دقيقة"],
+  [/Too many login attempts/i, "محاولات دخول غلط كتير، استنى شوية وجرّب تاني"],
   [/already exists/i, "فيه عنصر بنفس القيمة موجود قبل كده"],
   [/used by other records/i, "العنصر ده مستخدم في حاجات تانية"],
   [/Record not found/i, "العنصر مش موجود"],
