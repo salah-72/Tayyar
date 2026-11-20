@@ -2,7 +2,9 @@
 
 export type SaleMode = "UNIT" | "WEIGHT" | "PIECE_WEIGHT";
 export type OptionPricing = "PER_KG" | "PER_UNIT" | "FLAT";
-export type DiscountKind = "PERCENT" | "FIXED";
+export type DiscountKind = "PERCENT" | "FIXED" | "NONE";
+/** Kinds that actually reduce a price. NONE only means "this item/category opts out of discounts". */
+export type ActiveDiscountKind = Exclude<DiscountKind, "NONE">;
 export type OrderStatus = "PENDING" | "PREPARING" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED";
 
 export interface StoreSettings {
@@ -72,7 +74,7 @@ export interface CatalogProduct {
   qtyStep: number;
   weightChoices: number[];
   price: { listMinor: number; finalMinor: number; hasDiscount: boolean; startsFrom: boolean };
-  discount: { kind: DiscountKind; value: number; source: "product" | "category" } | null;
+  discount: { kind: ActiveDiscountKind; value: number; source: "product" | "category" } | null;
   isFeatured: boolean;
   available: boolean;
   optionGroups: CatalogOptionGroup[];
@@ -80,7 +82,7 @@ export interface CatalogProduct {
 
 export interface CatalogDiscount {
   name: string;
-  kind: DiscountKind;
+  kind: ActiveDiscountKind;
   value: number;
   minSubtotalMinor: number;
   maxDiscountMinor: number | null;

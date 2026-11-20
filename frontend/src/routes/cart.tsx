@@ -1,18 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { AlertTriangle, Loader2, PencilLine, ShoppingCart, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
-import { cart, useCart, type CartLine } from "@/lib/cart";
-import { badProductId, useQuote } from "@/lib/quote";
+import { cart, useCart, useCartReady, type CartLine } from "@/lib/cart";
+import { badProductId, itemForLine, useQuote } from "@/lib/quote";
 import { formatMoney, formatQty } from "@/lib/money";
 import { stepQty } from "@/lib/pricing";
-import { isApproxProduct, useApprox } from "@/lib/approx";
 import { StoreLayout } from "@/components/store/StoreLayout";
-import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { ProductImage } from "@/components/store/ProductImage";
 import { QtyStepper } from "@/components/store/QtyStepper";
 import { PricingSummary } from "@/components/store/PricingSummary";
-import { ApproxBadge } from "@/components/store/ApproxBadge";
 import { Progress } from "@/components/ui/progress";
 import type { QuoteItem } from "@/lib/api/types";
 
@@ -35,9 +33,8 @@ export const Route = createFileRoute("/cart")({
 function CartPage() {
   const c = useCatalog();
   const { lines } = useCart();
+  const ready = useCartReady();
   const quote = useQuote(lines);
-  const approx = useApprox();
-  const anyApprox = quote.data ? approx.any(quote.data.items) : false;
   const bad = badProductId(quote.error);
   const threshold = c.settings.freeDeliveryThresholdMinor;
   const subtotal = quote.data ? quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor : 0;
@@ -46,6 +43,18 @@ function CartPage() {
   function removeWithUndo(line: CartLine, index: number, name: string) {
     cart.remove(line.key);
     toast(`اتشال «${name}» من السلة`, { action: { label: "تراجع", onClick: () => cart.restore(line, index) } });
+  }
+
+  // Until the saved cart is read from localStorage, don't claim it is empty.
+  if (!ready) {
+    return (
+      <StoreLayout>
+        <Header />
+        <div className="grid place-items-center py-24">
+          <Loader2 className="animate-spin text-muted-foreground" />
+        </div>
+      </StoreLayout>
+    );
   }
 
   if (lines.length === 0) {
@@ -63,7 +72,7 @@ function CartPage() {
           </Link>
         </div>
         <div className="mx-4 mt-4 md:mx-6">
-          <CustomItemRequest />
+          <CustomItemForm />
         </div>
       </StoreLayout>
     );
@@ -95,19 +104,20 @@ function CartPage() {
             <CartRow
               key={line.key}
               line={line}
-              item={quote.data?.items[i]}
+              item={itemForLine(quote.data, line)}
+              pending={quote.isPlaceholderData}
               invalid={line.type === "product" && line.productId === bad}
               onRemove={(name) => removeWithUndo(line, i, name)}
             />
           ))}
 
-          <CustomItemRequest />
+          <CustomItemForm />
         </div>
 
         <aside className="hidden lg:block">
           <div className="sticky top-6 rounded-2xl bg-card p-5 shadow-card">
             <h2 className="mb-4 font-bold">ملخص الطلب</h2>
-            {quote.data ? <PricingSummary pricing={quote.data.pricing} isEstimated={anyApprox} needsPricing={quote.data.needsPricing} /> : <Loader2 className="mx-auto animate-spin text-muted-foreground" />}
+            {quote.data ? <PricingSummary pricing={quote.data.pricing} isEstimated={quote.data.isEstimated} needsPricing={quote.data.needsPricing} /> : <Loader2 className="mx-auto animate-spin text-muted-foreground" />}
             <CheckoutButton disabled={!quote.data || !!quote.error} className="mt-5 w-full" />
           </div>
         </aside>
@@ -118,7 +128,7 @@ function CartPage() {
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">{lines.length} منتجات</p>
             <p className="text-lg font-bold tabular-nums text-primary-deep">
-              {quote.isFetching && !quote.data ? "..." : quote.data ? (anyApprox ? "≈ " : "") + formatMoney(quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor + quote.data.pricing.serviceFeeMinor) : "—"}
+              {quote.isFetching && !quote.data ? "..." : quote.data ? formatMoney(quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor + quote.data.pricing.serviceFeeMinor) : "—"}
             </p>
           </div>
           <CheckoutButton disabled={!quote.data || !!quote.error} className="flex-1" />
@@ -162,11 +172,14 @@ function Header({ showClear }: { showClear?: boolean }) {
 function CartRow({
   line,
   item,
+  pending,
   invalid,
   onRemove,
 }: {
   line: CartLine;
   item?: QuoteItem;
+  /** the item may be from before the latest cart change; dim the numbers until the new quote lands */
+  pending: boolean;
   invalid: boolean;
   onRemove: (name: string) => void;
 }) {
@@ -226,15 +239,56 @@ function CartRow({
           ) : (
             <button onClick={() => onRemove(name)} className="text-sm font-semibold text-sale">شيله</button>
           )}
-          <div className="text-end">
+          <div className={`text-end transition-opacity ${pending ? "opacity-50" : ""}`}>
             {item && item.lineDiscountMinor > 0 && item.lineTotalMinor != null && (
               <p className="text-xs text-muted-foreground line-through tabular-nums">{formatMoney(item.lineTotalMinor + item.lineDiscountMinor)}</p>
             )}
-            <p className="font-bold tabular-nums text-primary-deep">{item ? (p && isApproxProduct(p) ? "≈ " : "") + formatMoney(item.lineTotalMinor) : "..."}</p>
-            {p && isApproxProduct(p) && <ApproxBadge className="mt-0.5" />}
+            <p className="font-bold tabular-nums text-primary-deep">{item ? formatMoney(item.lineTotalMinor) : "..."}</p>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CustomItemForm() {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [note, setNote] = useState("");
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary-soft/40 p-4 text-start"
+      >
+        <PencilLine className="size-5 text-primary" />
+        <div>
+          <p className="text-sm font-semibold text-primary-deep">عايز حاجة مش موجودة؟</p>
+          <p className="text-xs text-muted-foreground">اكتبها وإحنا نشتريهالك، وسعرها يتحسب بعد الشراء</p>
+        </div>
+      </button>
+    );
+  }
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (text.trim().length < 2) { toast.error("اكتب اسم الصنف"); return; }
+        cart.addCustom(text.trim(), note.trim() || undefined);
+        setText("");
+        setNote("");
+        setOpen(false);
+        toast.success("اتضاف للسلة");
+      }}
+      className="space-y-2 rounded-2xl bg-card p-4 shadow-card"
+    >
+      <p className="text-sm font-semibold">صنف مش موجود</p>
+      <input value={text} onChange={(e) => setText(e.target.value)} maxLength={200} placeholder="مثال: ٢ كيلو مانجا عويسي" className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary" />
+      <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="ملاحظة (اختياري)" className="h-11 w-full rounded-xl border bg-background px-3 text-sm outline-none focus:border-primary" />
+      <div className="flex gap-2">
+        <button type="submit" className="h-10 flex-1 rounded-xl bg-primary text-sm font-semibold text-primary-foreground">أضف للسلة</button>
+        <button type="button" onClick={() => setOpen(false)} className="h-10 rounded-xl px-4 text-sm text-muted-foreground">إلغاء</button>
+      </div>
+    </form>
   );
 }

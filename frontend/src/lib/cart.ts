@@ -61,6 +61,7 @@ export const cart = {
     listeners.forEach((l) => l());
   },
   get: () => state,
+  isHydrated: () => hydrated,
   subscribe(l: () => void) {
     listeners.add(l);
     return () => listeners.delete(l);
@@ -114,6 +115,14 @@ export const cart = {
 
 export function useCart() {
   return useSyncExternalStore(cart.subscribe, cart.get, () => EMPTY);
+}
+
+/**
+ * False on the server and during hydration, true once the saved cart has been read from
+ * localStorage. Gate "empty cart" UI and form prefill on it so they never see a not-yet-loaded cart.
+ */
+export function useCartReady() {
+  return useSyncExternalStore(cart.subscribe, cart.isHydrated, () => false);
 }
 
 /** Number of distinct items shown on the cart badge. */
