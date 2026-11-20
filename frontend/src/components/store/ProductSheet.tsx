@@ -82,7 +82,7 @@ function SheetBody({ p, slug, toneIndex }: { p: CatalogProduct; slug?: string; t
         <DrawerDescription className={cn("mt-1 text-sm text-muted-foreground", !p.description && "sr-only")}>
           {p.description ?? p.name}
         </DrawerDescription>
-        <PriceTag p={p} className="mt-2 [&>span:nth-child(2)]:text-xl" />
+        <PriceTag p={p} className="mt-2 [&_[data-price]]:text-xl" />
 
         {p.saleMode === "PIECE_WEIGHT" && (
           <Section title="وزن القطعة" hint="السعر النهائي بيتحدد بعد الوزن الفعلي">

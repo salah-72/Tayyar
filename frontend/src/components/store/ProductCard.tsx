@@ -18,12 +18,15 @@ export function discountLabel(p: CatalogProduct) {
 }
 
 export function PriceTag({ p, className }: { p: CatalogProduct; className?: string }) {
-  const per =
-    p.saleMode === "WEIGHT" ? `/ ${p.unitLabel}` : p.saleMode === "UNIT" ? null : null;
+  // "13 ج / كيلو": الوحدة جنب السعر علَى طول بدل سطر لوحدها
+  const per = p.saleMode === "PIECE_WEIGHT" ? null : `/ ${p.unitLabel}`;
   return (
     <div className={cn("flex flex-wrap items-baseline gap-x-1.5", className)}>
       {p.price.startsFrom && <span className="text-[11px] text-muted-foreground">يبدأ من</span>}
-      <span className="text-base font-bold text-primary-deep tabular-nums">{formatMoney(p.price.finalMinor)}</span>
+      <span data-price className="text-base font-bold text-primary-deep tabular-nums">
+        {formatMoney(p.price.finalMinor, { currency: false })}
+        <span className="ms-0.5 text-xs font-semibold">ج</span>
+      </span>
       {per && <span className="text-[11px] text-muted-foreground">{per}</span>}
       {p.price.hasDiscount && (
         <span className="text-xs text-muted-foreground line-through tabular-nums">{formatMoney(p.price.listMinor)}</span>
@@ -98,12 +101,12 @@ export function ProductCard({
           </button>
         )}
       </div>
-      <div className="flex flex-1 flex-col px-0.5 pt-2">
+      <div className="flex flex-1 flex-col px-0.5 pt-1.5">
         <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
         </button>
-        <p className="text-xs text-muted-foreground">{p.saleMode === "WEIGHT" ? `بال${p.unitLabel}` : p.unitLabel}</p>
-        <PriceTag p={p} className="mt-auto pt-1.5" />
+        {p.saleMode === "PIECE_WEIGHT" && <p className="text-xs text-muted-foreground">{p.unitLabel}</p>}
+        <PriceTag p={p} className="mt-auto pt-1" />
       </div>
     </div>
   );
