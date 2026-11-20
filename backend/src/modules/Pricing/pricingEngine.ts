@@ -197,10 +197,7 @@ function priceProductLine(line: ProductLine, p: PricingProduct): PricedItem {
     storeId: p.storeId,
     storeName: p.storeName,
     menuSection: p.menuSection,
-    commissionBps: p.commissionBps,
-    serviceFeeMinor: p.commissionBps
-      ? bpsOf(lineNet + optionsTotal, p.commissionBps)
-      : 0,
+    serviceFeeMinor: 0,
   };
 }
 
@@ -245,7 +242,6 @@ export function priceCart(input: PricingInput): PricingResult {
         storeId: null,
         storeName: null,
         menuSection: null,
-        commissionBps: null,
         serviceFeeMinor: 0,
       };
     }
@@ -258,6 +254,21 @@ export function priceCart(input: PricingInput): PricingResult {
       );
     return priceProductLine(line, p);
   });
+
+  // رسوم الخدمة: مبلغ ثابت على كل محل/مصدر مختلف في الأوردر (مش نسبة).
+  // بنحطها على أول صنف من كل محل، فالمحاسبة بتجمعها مع المحل ده من غير أي تغيير.
+  // الأصناف المكتوبة بإيد العميل (من غير محل) مالهاش رسوم.
+  let serviceFeeStores = 0;
+  const perStore = settings.serviceFeePerStoreMinor;
+  if (perStore > 0) {
+    const charged = new Set<string>();
+    for (const it of items) {
+      if (it.isCustom || !it.storeId || charged.has(it.storeId)) continue;
+      charged.add(it.storeId);
+      it.serviceFeeMinor = perStore;
+      serviceFeeStores++;
+    }
+  }
 
   let subtotal = 0;
   let productDiscount = 0;
@@ -284,6 +295,7 @@ export function priceCart(input: PricingInput): PricingResult {
     subtotalMinor: subtotal,
     invoiceDiscountMinor: invoiceDiscount,
     serviceFeeMinor: serviceFee,
+    serviceFeeStores,
     discountId: best?.discount.id ?? null,
     discountLabel: best?.discount.name ?? null,
     freeDeliveryApplied: freeDelivery,

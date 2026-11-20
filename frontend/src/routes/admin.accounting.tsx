@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FileText, Undo2, CheckCheck } from "lucide-react";
 import { api } from "@/lib/api/client";
 import type { DayAccount, SettlementState, StoreRange } from "@/lib/api/admin-types";
-import { formatMoney, bpsToPercent } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { AdminPage, LoadingBlock, EmptyState, ErrorBlock } from "@/components/admin/AdminPage";
 import { useAdminMutation, todayISO, fmtDate } from "@/components/admin/hooks";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
@@ -62,7 +62,7 @@ function AdminAccountingPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-bold">{s.storeName}</p>
-                      <p className="text-xs text-muted-foreground">خدمة {bpsToPercent(s.serviceFeeBps)} · {s.ordersCount} أوردر · {s.itemsCount} صنف</p>
+                      <p className="text-xs text-muted-foreground">{s.ordersCount} أوردر · {s.itemsCount} صنف</p>
                     </div>
                     {s.salesMinor > 0 || s.settlement ? <StateBadge s={s.state} /> : <span className="text-xs text-muted-foreground">مفيش مبيعات</span>}
                   </div>

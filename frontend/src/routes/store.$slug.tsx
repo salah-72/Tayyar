@@ -4,7 +4,7 @@ import { useState } from "react";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
 import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
-import { bpsToPercent } from "@/lib/money";
+import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/store/$slug")({
@@ -41,7 +41,7 @@ function StorePage() {
     <StoreLayout>
       <div className="relative bg-gradient-hero px-4 pb-14 pt-5 text-primary-foreground md:px-6">
         <div className="flex items-center justify-between">
-          <Link to="/stores" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
+          <Link to="/" hash="restaurants" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
             <ArrowRight className="size-5" />
           </Link>
           <CartButton />
@@ -53,8 +53,8 @@ function StorePage() {
           <div>
             <h1 className="text-2xl font-bold">{store.name}</h1>
             <p className="mt-1 text-sm opacity-85">{store.sections.join(" · ")}</p>
-            {store.serviceFeeBps ? (
-              <p className="mt-1 text-xs opacity-75">بيتضاف رسوم خدمة {bpsToPercent(store.serviceFeeBps)} على أصناف المطعم</p>
+            {c.settings.serviceFeePerStoreMinor > 0 ? (
+              <p className="mt-1 text-xs opacity-75">بيتضاف رسوم خدمة {formatMoney(c.settings.serviceFeePerStoreMinor)} على كل محل في الأوردر</p>
             ) : null}
           </div>
         </div>

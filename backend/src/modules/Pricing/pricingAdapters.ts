@@ -12,7 +12,6 @@ export interface StoreForPricing {
   id: string;
   name: string;
   type: 'SUPPLIER' | 'RESTAURANT';
-  commissionBps: number;
   isActive: boolean;
   archivedAt: Date | null;
 }
@@ -98,7 +97,6 @@ export function toPricingProduct(p: ProductForPricing): PricingProduct {
     storeId: store?.id ?? null,
     storeName: store?.name ?? null,
     menuSection: p.menuSection,
-    commissionBps: store?.type === 'RESTAURANT' ? store.commissionBps : null,
     optionGroups: p.optionGroups
       .filter((g) => g.isActive)
       .sort(bySort)

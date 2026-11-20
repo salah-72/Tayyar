@@ -48,14 +48,12 @@ export const stores = [
     slug: 'el-amana',
     name: 'الأمانة',
     type: 'SUPPLIER' as const,
-    commissionBps: 0,
     sortOrder: 10,
   },
   {
     slug: 'aklyano',
     name: 'اكليانو',
     type: 'SUPPLIER' as const,
-    commissionBps: 0,
     sortOrder: 11,
   },
   // مطاعم (بتظهر للعميل كمنيو)
@@ -63,14 +61,12 @@ export const stores = [
     slug: 'el-zahraa',
     name: 'كشري الزهراء',
     type: 'RESTAURANT' as const,
-    commissionBps: 500,
     sortOrder: 1,
   },
   {
     slug: 'pizza-plaza',
     name: 'بيتزا بلازا',
     type: 'RESTAURANT' as const,
-    commissionBps: 500,
     sortOrder: 2,
   },
 ];
@@ -81,6 +77,7 @@ export const settings = {
   tagline: 'توصيل كل اللي تحتاجه لحد باب البيت',
   whatsappNumber: '201012345678',
   freeDeliveryThresholdMinor: 50000, // 500 جنيه بالقرش
+  serviceFeePerStoreMinor: 1000, // 10 جنيه على كل محل مختلف في الأوردر
   acceptingOrders: true,
 };
 

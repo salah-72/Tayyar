@@ -116,6 +116,7 @@ export const toCustomerOrderDto = (o: OrderRow) => {
       invoiceDiscountMinor: o.invoiceDiscountMinor,
       discountLabel: o.discountLabel,
       serviceFeeMinor: o.serviceFeeMinor,
+      serviceFeeLabel: serviceFeeLabel(items),
       deliveryFeeMinor: o.deliveryFeeMinor,
       freeDeliveryApplied: o.freeDeliveryApplied,
       totalMinor: o.totalMinor,
@@ -142,7 +143,6 @@ const toPricedItemDto = (i: PricedItem) => ({
   lineTotalMinor: i.lineTotalMinor,
   lineDiscountMinor: i.lineDiscountMinor,
   serviceFeeMinor: i.serviceFeeMinor,
-  serviceFeeBps: i.serviceFeeMinor > 0 ? i.commissionBps : null,
   note: i.note,
 });
 
@@ -155,6 +155,12 @@ export const toQuoteDto = (r: PricingResult, areaSelected: boolean) => ({
     invoiceDiscountMinor: r.invoiceDiscountMinor,
     discountLabel: r.discountLabel,
     serviceFeeMinor: r.serviceFeeMinor,
+    serviceFeeLabel: serviceFeeLabel(
+      r.items.map((i) => ({
+        serviceFeeMinor: i.serviceFeeMinor,
+        serviceFeeBps: null,
+      })),
+    ),
     freeDeliveryApplied: r.freeDeliveryApplied,
     deliveryFeeMinor: areaSelected ? r.deliveryFeeMinor : null,
     totalMinor: r.totalMinor,
@@ -193,13 +199,23 @@ export const formatQuantity = (
 
 export const formatPercent = (bps: number): string => String(bps / 100);
 
-export const serviceRateLabel = (
-  items: { serviceFeeBps: number | null }[],
+export const serviceFeeLabel = (
+  items: { serviceFeeMinor: number; serviceFeeBps: number | null }[],
 ): string => {
-  const rates = new Set(
-    items.map((i) => i.serviceFeeBps).filter((b): b is number => !!b),
-  );
-  return rates.size === 1 ? ` (${formatPercent([...rates][0])}%)` : '';
+  const charged = items.filter((i) => i.serviceFeeMinor > 0);
+  if (!charged.length) return 'رسوم الخدمة';
+
+  if (charged.every((i) => i.serviceFeeBps)) {
+    const rates = new Set(charged.map((i) => i.serviceFeeBps as number));
+    return rates.size === 1
+      ? `خدمة المطاعم (${formatPercent([...rates][0])}%)`
+      : 'خدمة المطاعم';
+  }
+
+  const amounts = new Set(charged.map((i) => i.serviceFeeMinor));
+  return charged.length > 1 && amounts.size === 1
+    ? `رسوم الخدمة (${charged.length} × ${formatMinor([...amounts][0])} ج)`
+    : 'رسوم الخدمة';
 };
 
 export interface WhatsappInput {
@@ -244,9 +260,7 @@ export function buildWhatsappMessage({
       `خصم الفاتورة${p.discountLabel ? ` (${p.discountLabel})` : ''}: -${formatMinor(p.invoiceDiscountMinor)} ج`,
     );
   if (p.serviceFeeMinor > 0)
-    L.push(
-      `خدمة المطاعم${serviceRateLabel(o.items)}: ${formatMinor(p.serviceFeeMinor)} ج`,
-    );
+    L.push(`${serviceFeeLabel(o.items)}: ${formatMinor(p.serviceFeeMinor)} ج`);
   L.push(
     `التوصيل: ${p.freeDeliveryApplied ? 'مجاني' : `${formatMinor(p.deliveryFeeMinor)} ج`}`,
   );

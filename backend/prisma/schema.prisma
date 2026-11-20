@@ -73,6 +73,7 @@ model Settings {
   logoUrl                    String?
   whatsappNumber             String
   freeDeliveryThresholdMinor Int     @default(0)
+  serviceFeePerStoreMinor    Int     @default(1000)
   acceptingOrders            Boolean @default(true)
 }
 

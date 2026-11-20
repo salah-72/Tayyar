@@ -21,7 +21,7 @@ export function PricingSummary({
       {pricing.invoiceDiscountMinor > 0 && (
         <Row label={pricing.discountLabel ?? "خصم الفاتورة"} value={`- ${formatMoney(pricing.invoiceDiscountMinor)}`} tone="sale" />
       )}
-      {pricing.serviceFeeMinor > 0 && <Row label="رسوم خدمة المطاعم" value={formatMoney(pricing.serviceFeeMinor)} />}
+      {pricing.serviceFeeMinor > 0 && <Row label={pricing.serviceFeeLabel ?? "رسوم الخدمة"} value={formatMoney(pricing.serviceFeeMinor)} />}
       {showDelivery && (
         <Row
           label="التوصيل"

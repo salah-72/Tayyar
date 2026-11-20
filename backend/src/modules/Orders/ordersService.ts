@@ -130,6 +130,7 @@ async function priceFromDb(
       products,
       settings: {
         freeDeliveryThresholdMinor: settings.freeDeliveryThresholdMinor,
+        serviceFeePerStoreMinor: settings.serviceFeePerStoreMinor,
       },
       discounts: candidates,
       areaFeeMinor: area?.feeMinor ?? 0,
@@ -277,7 +278,6 @@ export const ordersService = {
                 storeId: i.storeId,
                 storeName: i.storeName,
                 menuSection: i.menuSection,
-                commissionBps: i.commissionBps,
                 serviceFeeMinor: i.serviceFeeMinor,
               })),
             },

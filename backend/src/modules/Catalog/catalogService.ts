@@ -13,7 +13,6 @@ const storeSelect = {
   id: true,
   name: true,
   type: true,
-  commissionBps: true,
   isActive: true,
   archivedAt: true,
 } satisfies Prisma.StoreSelect;

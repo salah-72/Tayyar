@@ -22,21 +22,21 @@ export const Route = createFileRoute("/admin/settings")({
 function AdminSettingsPage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["admin", "settings"], queryFn: () => api<{ settings: StoreSettings }>("/settings").then((d) => d.settings), retry: false });
-  const [f, setF] = useState({ storeName: "", tagline: "", whatsappNumber: "", threshold: "", acceptingOrders: true });
+  const [f, setF] = useState({ storeName: "", tagline: "", whatsappNumber: "", threshold: "", serviceFee: "", acceptingOrders: true });
   useEffect(() => {
-    if (q.data) setF({ storeName: q.data.storeName, tagline: q.data.tagline ?? "", whatsappNumber: q.data.whatsappNumber ?? "", threshold: egpStr(q.data.freeDeliveryThresholdMinor), acceptingOrders: q.data.acceptingOrders });
+    if (q.data) setF({ storeName: q.data.storeName, tagline: q.data.tagline ?? "", whatsappNumber: q.data.whatsappNumber ?? "", threshold: egpStr(q.data.freeDeliveryThresholdMinor), serviceFee: egpStr(q.data.serviceFeePerStoreMinor), acceptingOrders: q.data.acceptingOrders });
   }, [q.data]);
   const save = useAdminMutation(
     () =>
       api("/settings", {
         method: "PATCH",
-        body: { storeName: f.storeName.trim(), tagline: f.tagline.trim() || null, whatsappNumber: f.whatsappNumber.replace(/\D/g, ""), freeDeliveryThresholdMinor: toMinor(f.threshold || 0), acceptingOrders: f.acceptingOrders },
+        body: { storeName: f.storeName.trim(), tagline: f.tagline.trim() || null, whatsappNumber: f.whatsappNumber.replace(/\D/g, ""), freeDeliveryThresholdMinor: toMinor(f.threshold || 0), serviceFeePerStoreMinor: toMinor(f.serviceFee || 0), acceptingOrders: f.acceptingOrders },
       }),
     { success: "الإعدادات اتحفظت" },
   );
 
   return (
-    <AdminPage title="إعدادات المتجر" description="الاسم، اللوجو، رقم الواتساب والتوصيل المجاني">
+    <AdminPage title="إعدادات المتجر" description="الاسم، اللوجو، رقم الواتساب، التوصيل المجاني ورسوم الخدمة">
       <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
         {q.isLoading ? (
           <LoadingBlock />
@@ -62,7 +62,7 @@ function AdminSettingsPage() {
   );
 }
 
-type F = { storeName: string; tagline: string; whatsappNumber: string; threshold: string; acceptingOrders: boolean };
+type F = { storeName: string; tagline: string; whatsappNumber: string; threshold: string; serviceFee: string; acceptingOrders: boolean };
 function SettingsForm({ f, setF, busy, onSave }: { f: F; setF: (f: F) => void; busy: boolean; onSave: () => void }) {
   return (
     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); onSave(); }}>
@@ -70,6 +70,7 @@ function SettingsForm({ f, setF, busy, onSave }: { f: F; setF: (f: F) => void; b
       <Field label="الشعار (جملة تحت الاسم)"><Input value={f.tagline} onChange={(e) => setF({ ...f, tagline: e.target.value })} /></Field>
       <Field label="رقم الواتساب" hint="بالصيغة الدولية من غير + (مثال: 201012345678). الأوردرات بتتبعت عليه."><Input required dir="ltr" inputMode="numeric" value={f.whatsappNumber} onChange={(e) => setF({ ...f, whatsappNumber: e.target.value })} className="text-right" /></Field>
       <Field label="التوصيل مجاني من (جنيه)" hint="0 = مفيش توصيل مجاني"><Input type="number" min={0} step="1" value={f.threshold} onChange={(e) => setF({ ...f, threshold: e.target.value })} /></Field>
+      <Field label="رسوم الخدمة على كل محل (جنيه)" hint="بتتضاف مرة واحدة على كل محل أو مصدر مختلف في الأوردر (مثلًا 3 محلات × 10 = 30 ج) وبتبقى ربحك. 0 = من غير رسوم."><Input type="number" min={0} step="1" value={f.serviceFee} onChange={(e) => setF({ ...f, serviceFee: e.target.value })} /></Field>
       <SwitchField label="بيستقبل أوردرات" hint="اقفلها لو مش شغالين دلوقتي" checked={f.acceptingOrders} onChange={(v) => setF({ ...f, acceptingOrders: v })} />
       <Button type="submit" disabled={busy} className="rounded-xl">{busy && <Loader2 className="animate-spin" />} حفظ الإعدادات</Button>
     </form>

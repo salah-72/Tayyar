@@ -2,11 +2,7 @@ import type { Prisma } from '@prisma/client';
 import appError from '../../common/utils/appError';
 import { uniqueSlug } from '../../common/utils/slug';
 import { prisma } from '../../config/postgres';
-import {
-  commissionAllowed,
-  DEFAULT_RESTAURANT_BPS,
-  toStoreDto,
-} from './storesHelpers';
+import { toStoreDto } from './storesHelpers';
 import type {
   CreateStoreInput,
   ListStoresQuery,
@@ -43,13 +39,6 @@ async function assertSlugFree(slug: string, exceptId?: string) {
     throw new appError('الـ slug مستخدم', 409, 'STORE_SLUG_TAKEN');
 }
 
-const badCommission = () =>
-  new appError(
-    'رسوم الخدمة بتتطبّق على المطاعم بس (المورّد لازم يفضل 0)',
-    422,
-    'COMMISSION_NOT_ALLOWED',
-  );
-
 export const storesService = {
   async list(q: ListStoresQuery) {
     const stores = await prisma.store.findMany({
@@ -76,10 +65,6 @@ export const storesService = {
   async create(b: CreateStoreInput) {
     await assertNameFree(b.name);
 
-    const commissionBps =
-      b.commissionBps ?? (b.type === 'RESTAURANT' ? DEFAULT_RESTAURANT_BPS : 0);
-    if (!commissionAllowed(b.type, commissionBps)) throw badCommission();
-
     let slug: string;
     if (b.slug) {
       await assertSlugFree(b.slug);
@@ -97,7 +82,6 @@ export const storesService = {
         name: b.name,
         slug,
         type: b.type,
-        commissionBps,
         sortOrder: b.sortOrder ?? 0,
         isActive: b.isActive ?? true,
       },
@@ -113,11 +97,6 @@ export const storesService = {
 
     if (patch.name) await assertNameFree(patch.name, id);
     if (patch.slug) await assertSlugFree(patch.slug, id);
-    if (
-      patch.commissionBps !== undefined &&
-      !commissionAllowed(cur.type, patch.commissionBps)
-    )
-      throw badCommission();
 
     const store = await prisma.store.update({
       where: { id },

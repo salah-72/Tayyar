@@ -104,11 +104,11 @@ export interface DayRow {
 }
 export interface DayAccount {
   date: string;
-  stores: (DayRow & { storeId: string; storeName: string; serviceFeeBps: number })[];
+  stores: (DayRow & { storeId: string; storeName: string })[];
   totals: { salesMinor: number; serviceFeeMinor: number; ordersCount: number; openCount: number };
 }
 export interface StoreRange {
-  store: { id: string; name: string; serviceFeeBps: number };
+  store: { id: string; name: string };
   from: string;
   to: string;
   days: DayRow[];
@@ -137,7 +137,6 @@ export interface AdminStore {
   isActive: boolean;
   imageUrl: string | null;
   archivedAt: string | null;
-  commissionBps: number;
   productsCount: number;
 }
 

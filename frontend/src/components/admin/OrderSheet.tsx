@@ -124,7 +124,7 @@ function OrderDetails({ id }: { id: string }) {
                     <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
                       <StoreIcon className="size-3" /> {it.storeName ?? it.categoryName}
                       {it.menuSection ? ` · ${it.menuSection}` : ""}
-                      {it.serviceFeeBps ? ` · خدمة ${bpsToPercent(it.serviceFeeBps)}` : ""}
+                      {it.serviceFeeMinor > 0 ? (it.serviceFeeBps ? ` · خدمة ${bpsToPercent(it.serviceFeeBps)}` : ` · رسوم الخدمة ${formatMoney(it.serviceFeeMinor)}`) : ""}
                       {it.actualCostMinor != null ? ` · اتشترى بـ ${formatMoney(it.actualCostMinor)}` : ""}
                     </p>
                   )}

@@ -100,7 +100,6 @@ const dayRow = (date: string, live: DaySummary, s: SettlementRow | null) => ({
 export interface StoreInfo {
   id: string;
   name: string;
-  commissionBps: number;
 }
 
 export function buildDayList(
@@ -108,6 +107,7 @@ export function buildDayList(
   stores: StoreInfo[],
   items: AccItem[],
   settlements: SettlementRow[],
+  allItems: AccItem[] = items,
 ) {
   const rows = stores.map((st) => {
     const live = summarizeItems(items.filter((i) => i.storeId === st.id));
@@ -115,7 +115,6 @@ export function buildDayList(
     return {
       storeId: st.id,
       storeName: st.name,
-      serviceFeeBps: st.commissionBps,
       ...dayRow(date, live, s),
     };
   });
@@ -125,7 +124,7 @@ export function buildDayList(
     stores: rows,
     totals: {
       salesMinor: rows.reduce((a, r) => a + r.salesMinor, 0),
-      serviceFeeMinor: rows.reduce((a, r) => a + r.serviceFeeMinor, 0),
+      serviceFeeMinor: summarizeItems(allItems).serviceFeeMinor,
       ordersCount: all.ordersCount,
       openCount: rows.filter((r) => r.salesMinor > 0 && r.state !== 'SETTLED')
         .length,

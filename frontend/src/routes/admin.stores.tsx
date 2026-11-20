@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Archive, Pencil, Plus, RotateCcw, Store, UtensilsCrossed } from "lucide-react";
 import { api } from "@/lib/api/client";
 import type { AdminStore } from "@/lib/api/admin-types";
-import { bpsToPercent } from "@/lib/money";
 import { AdminPage, LoadingBlock, EmptyState, ErrorBlock } from "@/components/admin/AdminPage";
 import { FormSheet, Field, SwitchField, FormSection } from "@/components/admin/form";
 import { useAdminMutation } from "@/components/admin/hooks";
@@ -20,8 +19,8 @@ export const Route = createFileRoute("/admin/stores")({
   component: AdminStoresPage,
 });
 
-type Draft = { id?: string; name: string; slug: string; type: AdminStore["type"]; commission: string; sortOrder: string; isActive: boolean; imageUrl?: string | null };
-const empty: Draft = { name: "", slug: "", type: "RESTAURANT", commission: "5", sortOrder: "0", isActive: true };
+type Draft = { id?: string; name: string; slug: string; type: AdminStore["type"]; sortOrder: string; isActive: boolean; imageUrl?: string | null };
+const empty: Draft = { name: "", slug: "", type: "RESTAURANT", sortOrder: "0", isActive: true };
 
 function AdminStoresPage() {
   const [archived, setArchived] = useState(false);
@@ -36,7 +35,6 @@ function AdminStoresPage() {
       const body = {
         name: d.name.trim(),
         ...(d.slug.trim() ? { slug: d.slug.trim() } : {}),
-        commissionBps: d.type === "RESTAURANT" ? Math.round(Number(d.commission || 0) * 100) : 0,
         sortOrder: Number(d.sortOrder || 0),
         isActive: d.isActive,
       };
@@ -87,7 +85,7 @@ function AdminStoresPage() {
               <div className="min-w-0 flex-1">
                 <p className="font-bold">{s.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {s.type === "RESTAURANT" ? `مطعم · خدمة ${bpsToPercent(s.commissionBps)}` : "مورّد"} · {s.productsCount} صنف
+                  {s.type === "RESTAURANT" ? "مطعم" : "مورّد"} · {s.productsCount} صنف
                 </p>
                 {!s.isActive && !s.archivedAt && <span className="text-[11px] text-muted-foreground">موقوف</span>}
               </div>
@@ -95,7 +93,7 @@ function AdminStoresPage() {
                 <Button size="sm" variant="outline" onClick={() => restore.mutate(s.id)}><RotateCcw /> رجّعه</Button>
               ) : (
                 <div className="flex">
-                  <Button size="icon" variant="ghost" aria-label="تعديل" onClick={() => setDraft({ id: s.id, name: s.name, slug: s.slug, type: s.type, commission: String(s.commissionBps / 100), sortOrder: String(s.sortOrder), isActive: s.isActive, imageUrl: s.imageUrl })}><Pencil /></Button>
+                  <Button size="icon" variant="ghost" aria-label="تعديل" onClick={() => setDraft({ id: s.id, name: s.name, slug: s.slug, type: s.type, sortOrder: String(s.sortOrder), isActive: s.isActive, imageUrl: s.imageUrl })}><Pencil /></Button>
                   <ConfirmButton trigger={<Button size="icon" variant="ghost" className="text-destructive" aria-label="أرشفة"><Archive /></Button>} title={`أرشفة ${s.name}؟`} description="هيختفي من الموقع، والحسابات القديمة هتفضل." confirmLabel="أرشف" onConfirm={() => archive.mutate(s.id)} />
                 </div>
               )}
@@ -121,9 +119,6 @@ function AdminStoresPage() {
             <FormSection title="البيانات">
               <Field label="الاسم"><Input required minLength={2} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} /></Field>
               <Field label="الرابط (slug)" hint="اختياري، بالإنجليزي"><Input dir="ltr" value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} /></Field>
-              {draft.type === "RESTAURANT" && (
-                <Field label="رسوم الخدمة (%)" hint="بتتضاف على أسعار المنيو وبتبقى ربحك"><Input type="number" min={0} max={100} step="0.5" value={draft.commission} onChange={(e) => setDraft({ ...draft, commission: e.target.value })} /></Field>
-              )}
               <Field label="الترتيب"><Input type="number" min={0} value={draft.sortOrder} onChange={(e) => setDraft({ ...draft, sortOrder: e.target.value })} /></Field>
               <SwitchField label="شغّال" checked={draft.isActive} onChange={(v) => setDraft({ ...draft, isActive: v })} />
               {draft.type === "RESTAURANT" && <p className="text-xs text-muted-foreground">أقسام المنيو (بيتزا، كريب…) بتتحدد من خانة «قسم المنيو» في كل صنف.</p>}

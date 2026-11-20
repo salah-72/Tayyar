@@ -30,8 +30,6 @@ export function toCatalogProduct(row: ProductRow) {
     thumbUrl: imageVariant(row.imageUrl, { width: 400, height: 400 }),
     categoryId: row.categoryId,
     storeId: store?.type === 'RESTAURANT' ? store.id : null,
-    serviceFeeBps:
-      p.commissionBps && p.commissionBps > 0 ? p.commissionBps : null,
     menuSection: p.menuSection,
     unit: p.unit,
     unitLabel: unitLabel(p.unit),
@@ -83,7 +81,6 @@ interface StoreRow {
   name: string;
   slug: string;
   imageUrl: string | null;
-  commissionBps: number;
 }
 
 export const toCatalogStore = (s: StoreRow, sections: string[]) => ({
@@ -92,6 +89,5 @@ export const toCatalogStore = (s: StoreRow, sections: string[]) => ({
   slug: s.slug,
   imageUrl: s.imageUrl,
   thumbUrl: imageVariant(s.imageUrl, { width: 300, height: 300 }),
-  serviceFeeBps: s.commissionBps > 0 ? s.commissionBps : null,
   sections,
 });

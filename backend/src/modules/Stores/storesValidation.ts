@@ -14,7 +14,6 @@ const fields = z.object({
     .regex(SLUG_REGEX, {
       message: 'الـ slug حروف إنجليزي صغيرة وأرقام وشرطات بس',
     }),
-  commissionBps: z.number().int().min(0).max(10000),
   sortOrder: z.number().int().min(0).max(100_000),
   isActive: z.boolean(),
 });
@@ -22,7 +21,6 @@ const fields = z.object({
 export const createStoreValidation = fields.pick({ name: true }).extend({
   type: typeEnum,
   slug: fields.shape.slug.optional(),
-  commissionBps: fields.shape.commissionBps.optional(),
   sortOrder: fields.shape.sortOrder.optional(),
   isActive: fields.shape.isActive.optional(),
 });

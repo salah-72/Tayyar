@@ -54,7 +54,7 @@ async function fetchItems(
 async function getRestaurant(storeId: string) {
   const store = await prisma.store.findUnique({
     where: { id: storeId },
-    select: { id: true, name: true, type: true, commissionBps: true },
+    select: { id: true, name: true, type: true },
   });
   if (!store) throw new appError('المحل مش موجود', 404, 'STORE_NOT_FOUND');
   if (store.type !== 'RESTAURANT')
@@ -85,12 +85,12 @@ export const accountingService = {
         ],
       },
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      select: { id: true, name: true, commissionBps: true },
+      select: { id: true, name: true },
     });
     const settlements = await prisma.storeSettlement.findMany({
       where: { date: dayKeyToDate(date) },
     });
-    return buildDayList(date, stores, restaurantItems, settlements);
+    return buildDayList(date, stores, restaurantItems, settlements, items);
   },
 
   async storeRange(storeId: string, q: StoreRangeQuery) {
@@ -105,11 +105,7 @@ export const accountingService = {
       }),
     ]);
     return {
-      store: {
-        id: store.id,
-        name: store.name,
-        serviceFeeBps: store.commissionBps,
-      },
+      store: { id: store.id, name: store.name },
       ...buildStoreRange(q.from, q.to, env.TIMEZONE, items, settlements),
     };
   },

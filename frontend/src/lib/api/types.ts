@@ -2,9 +2,7 @@
 
 export type SaleMode = "UNIT" | "WEIGHT" | "PIECE_WEIGHT";
 export type OptionPricing = "PER_KG" | "PER_UNIT" | "FLAT";
-export type DiscountKind = "PERCENT" | "FIXED" | "NONE";
-/** Kinds that actually reduce a price. NONE only means "this item/category opts out of discounts". */
-export type ActiveDiscountKind = Exclude<DiscountKind, "NONE">;
+export type DiscountKind = "PERCENT" | "FIXED";
 export type OrderStatus = "PENDING" | "PREPARING" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED";
 
 export interface StoreSettings {
@@ -13,6 +11,8 @@ export interface StoreSettings {
   logoUrl: string | null;
   whatsappNumber: string;
   freeDeliveryThresholdMinor: number;
+  /** رسوم الخدمة: مبلغ ثابت (بالقرش) على كل محل مختلف في الأوردر. 0 = متعطّلة */
+  serviceFeePerStoreMinor: number;
   acceptingOrders: boolean;
 }
 
@@ -38,7 +38,6 @@ export interface CatalogStore {
   slug: string;
   imageUrl: string | null;
   thumbUrl: string | null;
-  serviceFeeBps: number | null;
   sections: string[];
 }
 
@@ -65,7 +64,6 @@ export interface CatalogProduct {
   thumbUrl: string | null;
   categoryId: string | null;
   storeId: string | null;
-  serviceFeeBps: number | null;
   menuSection: string | null;
   unit: string;
   unitLabel: string;
@@ -74,7 +72,7 @@ export interface CatalogProduct {
   qtyStep: number;
   weightChoices: number[];
   price: { listMinor: number; finalMinor: number; hasDiscount: boolean; startsFrom: boolean };
-  discount: { kind: ActiveDiscountKind; value: number; source: "product" | "category" } | null;
+  discount: { kind: DiscountKind; value: number; source: "product" | "category" } | null;
   isFeatured: boolean;
   available: boolean;
   optionGroups: CatalogOptionGroup[];
@@ -82,7 +80,7 @@ export interface CatalogProduct {
 
 export interface CatalogDiscount {
   name: string;
-  kind: ActiveDiscountKind;
+  kind: DiscountKind;
   value: number;
   minSubtotalMinor: number;
   maxDiscountMinor: number | null;
@@ -117,6 +115,8 @@ export interface OrderPricing {
   invoiceDiscountMinor: number;
   discountLabel: string | null;
   serviceFeeMinor: number;
+  /** اسم بند الرسوم من السيرفر، مثلًا «رسوم الخدمة (3 × 10 ج)» */
+  serviceFeeLabel?: string;
   deliveryFeeMinor: number | null;
   freeDeliveryApplied: boolean;
   totalMinor: number;
@@ -133,7 +133,6 @@ export interface QuoteItem {
   lineTotalMinor: number | null;
   lineDiscountMinor: number;
   serviceFeeMinor: number;
-  serviceFeeBps: number | null;
 }
 
 export interface Quote {

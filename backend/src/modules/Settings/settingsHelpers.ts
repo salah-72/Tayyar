@@ -10,6 +10,7 @@ interface SettingsRow {
   logoUrl: string | null;
   whatsappNumber: string;
   freeDeliveryThresholdMinor: number;
+  serviceFeePerStoreMinor: number;
   acceptingOrders: boolean;
 }
 
@@ -19,5 +20,6 @@ export const toSettingsDto = (s: SettingsRow) => ({
   logoUrl: s.logoUrl,
   whatsappNumber: s.whatsappNumber,
   freeDeliveryThresholdMinor: s.freeDeliveryThresholdMinor,
+  serviceFeePerStoreMinor: s.serviceFeePerStoreMinor,
   acceptingOrders: s.acceptingOrders,
 });

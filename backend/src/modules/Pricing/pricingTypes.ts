@@ -36,12 +36,13 @@ export interface PricingProduct {
   storeId: string | null;
   storeName: string | null;
   menuSection: string | null;
-  commissionBps: number | null;
   optionGroups: PricingOptionGroup[];
 }
 
 export interface PricingSettings {
   freeDeliveryThresholdMinor: number;
+  /** رسوم الخدمة: مبلغ ثابت (بالقرش) على كل محل/مصدر مختلف في الأوردر. 0 = متعطّلة */
+  serviceFeePerStoreMinor: number;
 }
 
 export interface PricingDiscount {
@@ -95,7 +96,7 @@ export interface PricedItem {
   storeId: string | null;
   storeName: string | null;
   menuSection: string | null;
-  commissionBps: number | null;
+  /** رسوم الخدمة بتتحط على أول صنف من كل محل (مرة واحدة لكل محل في الأوردر) */
   serviceFeeMinor: number;
 }
 
@@ -114,6 +115,8 @@ export interface PricingResult {
   subtotalMinor: number;
   invoiceDiscountMinor: number;
   serviceFeeMinor: number;
+  /** عدد المحلات اللي اتحسب عليها رسوم خدمة */
+  serviceFeeStores: number;
   discountId: string | null;
   discountLabel: string | null;
   freeDeliveryApplied: boolean;
