@@ -2,10 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { catalogQuery, normalizeArabic, useCatalog } from "@/lib/catalog";
-import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
+import { StoreLayout } from "@/components/store/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
 import { CustomItemRequest } from "@/components/store/CustomItemRequest";
-import { categoryIcon } from "@/components/store/CategoryIcon";
+import { categoryIcon, categoryTone } from "@/components/store/CategoryIcon";
 import { cn } from "@/lib/utils";
 
 type CategoriesSearch = { c?: string; q?: string };
@@ -105,18 +105,15 @@ function CategoriesPage() {
           ) : (
             <>
               <h1 className="text-2xl font-bold">الأقسام</h1>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setSearchOpen(true)} aria-label="بحث" className="grid size-11 place-items-center rounded-full bg-card shadow-card">
-                  <Search className="size-5" />
-                </button>
-                <CartButton />
-              </div>
+              <button onClick={() => setSearchOpen(true)} aria-label="بحث" className="grid size-11 place-items-center rounded-full border bg-card">
+                <Search className="size-5" />
+              </button>
             </>
           )}
         </div>
         {!q && (
           <div ref={chipsRef} className="no-scrollbar mt-3 flex gap-2 overflow-x-auto px-4 md:px-6">
-            {c.categories.map((cat) => {
+            {c.categories.map((cat, idx) => {
               const Icon = categoryIcon(cat.slug);
               const on = cat.id === active?.id;
               return (
@@ -127,11 +124,13 @@ function CategoriesPage() {
                   replace
                   data-active={on}
                   className={cn(
-                    "flex shrink-0 items-center gap-2 rounded-2xl border px-3.5 py-2 text-sm font-medium transition-colors",
+                    "flex shrink-0 items-center gap-2 rounded-full border py-1.5 ps-1.5 pe-3.5 text-sm font-medium transition-colors",
                     on ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary/40",
                   )}
                 >
-                  <Icon className="size-4" />
+                  <span className={cn("grid size-7 place-items-center rounded-full", on ? "bg-primary-foreground/20" : categoryTone(idx, cat.slug))}>
+                    <Icon className="size-4" />
+                  </span>
                   {cat.name}
                 </Link>
               );
@@ -159,7 +158,13 @@ function CategoriesPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {!q && active && (
+              <div className="mb-3 flex items-baseline justify-between">
+                <h2 className="text-lg font-bold">{active.name}</h2>
+                <span className="text-sm text-muted-foreground">{products.length} صنف</span>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {products.map((p) => {
                 const i = p.categoryId ? catIndex.get(p.categoryId) ?? activeIndex : 1;
                 return (

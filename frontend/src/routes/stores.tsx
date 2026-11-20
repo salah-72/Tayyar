@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Store, UtensilsCrossed, X } from "lucide-react";
+import { ChevronLeft, Search, Store, UtensilsCrossed, X } from "lucide-react";
 import { catalogQuery, normalizeArabic, useCatalog } from "@/lib/catalog";
-import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
+import { StoreLayout } from "@/components/store/StoreLayout";
 import { categoryTone } from "@/components/store/CategoryIcon";
-import { bpsToPercent } from "@/lib/money";
 
 export const Route = createFileRoute("/stores")({
   loader: ({ context }) => context.queryClient.ensureQueryData(catalogQuery),
@@ -41,12 +40,11 @@ function StoresPage() {
   return (
     <StoreLayout>
       <div className="sticky top-0 z-30 bg-background/95 pb-3 pt-5 backdrop-blur">
-        <div className="flex items-center justify-between gap-3 px-4 md:px-6">
+        <div className="px-4 md:px-6">
           <h1 className="text-2xl font-bold">المطاعم والمحلات</h1>
-          <CartButton />
         </div>
         <div className="mt-3 px-4 md:px-6">
-          <label className="flex h-11 items-center gap-2 rounded-2xl bg-card px-3.5 shadow-card">
+          <label className="flex h-11 items-center gap-2 rounded-2xl border bg-card px-3.5">
             <Search className="size-4 text-primary" />
             <input
               value={q}
@@ -74,7 +72,7 @@ function StoresPage() {
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {stores.map((s, i) => {
+            {stores.map((s) => {
               const count = itemsCount.get(s.id) ?? 0;
               const img = s.thumbUrl ?? s.imageUrl;
               return (
@@ -82,9 +80,9 @@ function StoresPage() {
                   key={s.id}
                   to="/store/$slug"
                   params={{ slug: s.slug }}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-transform hover:-translate-y-0.5"
+                  className="flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors hover:border-primary/40"
                 >
-                  <span className={`grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl ${categoryTone(i + 1)}`}>
+                  <span className={`grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl ${categoryTone(0, "restaurant")}`}>
                     {img ? (
                       <img src={img} alt={s.name} className="size-full object-cover" loading="lazy" />
                     ) : (
@@ -95,10 +93,8 @@ function StoresPage() {
                     <p className="font-bold">{s.name}</p>
                     {s.sections.length > 0 && <p className="truncate text-xs text-muted-foreground">{s.sections.join(" · ")}</p>}
                     <p className="mt-1 text-xs text-primary">{count} صنف في المنيو</p>
-                    {s.serviceFeeBps ? (
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">رسوم خدمة {bpsToPercent(s.serviceFeeBps)}</p>
-                    ) : null}
                   </div>
+                  <ChevronLeft className="size-5 shrink-0 text-muted-foreground" />
                 </Link>
               );
             })}

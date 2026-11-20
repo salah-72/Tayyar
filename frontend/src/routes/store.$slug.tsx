@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, UtensilsCrossed } from "lucide-react";
 import { useState } from "react";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
-import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
+import { StoreLayout } from "@/components/store/StoreLayout";
 import { ProductCard } from "@/components/store/ProductCard";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
@@ -39,28 +39,27 @@ function StorePage() {
 
   return (
     <StoreLayout>
-      <div className="relative bg-gradient-hero px-4 pb-14 pt-5 text-primary-foreground md:px-6">
-        <div className="flex items-center justify-between">
-          <Link to="/stores" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
-            <ArrowRight className="size-5" />
-          </Link>
-          <CartButton />
-        </div>
-        <div className="mt-5 flex items-center gap-4">
+      <div className="bg-gradient-hero px-4 pb-6 pt-5 text-primary-foreground md:px-6">
+        <Link to="/stores" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
+          <ArrowRight className="size-5" />
+        </Link>
+        <div className="mt-4 flex items-center gap-4">
           <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl bg-card text-primary">
             {store.imageUrl ? <img src={store.imageUrl} alt={store.name} className="size-full object-cover" /> : <UtensilsCrossed className="size-9" strokeWidth={1.5} />}
           </div>
           <div>
             <h1 className="text-2xl font-bold">{store.name}</h1>
             <p className="mt-1 text-sm opacity-85">{store.sections.join(" · ")}</p>
-            {c.settings.serviceFeePerStoreMinor > 0 ? (
-              <p className="mt-1 text-xs opacity-75">بيتضاف رسوم خدمة {formatMoney(c.settings.serviceFeePerStoreMinor)} على كل محل في الأوردر</p>
-            ) : null}
           </div>
         </div>
+        {c.settings.serviceFeePerStoreMinor > 0 && (
+          <p className="mt-4 w-fit rounded-full bg-primary-foreground/15 px-3 py-1 text-xs">
+            رسوم الخدمة {formatMoney(c.settings.serviceFeePerStoreMinor)} على كل محل في الأوردر
+          </p>
+        )}
       </div>
 
-      <div className="no-scrollbar sticky top-0 z-20 -mt-8 flex gap-2 overflow-x-auto px-4 py-2 md:px-6">
+      <div className="no-scrollbar sticky top-0 z-20 flex gap-2 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur md:px-6">
         <SectionChip on={active === null} onClick={() => setActive(null)}>الكل</SectionChip>
         {sections.map((s) => (
           <SectionChip key={s} on={active === s} onClick={() => setActive(s)}>
@@ -69,12 +68,21 @@ function StorePage() {
         ))}
       </div>
 
-      <div className="space-y-7 px-4 pt-3 md:px-6">
+      <div className="space-y-7 px-4 pt-4 md:px-6">
+        {items.length === 0 && (
+          <div className="rounded-3xl border border-dashed bg-card/60 px-6 py-16 text-center">
+            <p className="font-semibold">المنيو لسه فاضي</p>
+            <p className="mt-1 text-sm text-muted-foreground">ارجع كمان شوية، هنضيف الأصناف قريب.</p>
+          </div>
+        )}
         {sections
           .filter((s) => active === null || s === active)
           .map((s) => (
             <section key={s}>
-              <h2 className="mb-3 text-lg font-bold">{s}</h2>
+              <h2 className="mb-3 flex items-baseline justify-between text-lg font-bold">
+                {s}
+                <span className="text-sm font-normal text-muted-foreground">{items.filter((p) => (p.menuSection ?? "أخرى") === s).length} صنف</span>
+              </h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {items
                   .filter((p) => (p.menuSection ?? "أخرى") === s)
@@ -94,7 +102,7 @@ function SectionChip({ on, onClick, children }: { on: boolean; onClick: () => vo
     <button
       onClick={onClick}
       className={cn(
-        "shrink-0 rounded-2xl border px-4 py-2 text-sm font-medium shadow-card transition-colors",
+        "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
         on ? "border-primary bg-primary text-primary-foreground" : "bg-card",
       )}
     >
