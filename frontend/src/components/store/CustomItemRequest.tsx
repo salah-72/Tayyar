@@ -1,21 +1,15 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Plane } from "lucide-react";
+import { ArrowUpLeft, Plane } from "lucide-react";
 import { toast } from "sonner";
 import { cart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
-/**
- * "اطلب أي حاجة": بيضيف سطر مكتوب بإيد العميل للسلة (سعره بيتحسب بعد الشراء).
- * الحقل ظاهر دايمًا، علشان العميل يفهم إنه يقدر يكتب من غير ما يدوس على حاجة الأول.
- * بنستخدم الكومبوننت في الرئيسية وصفحة الأقسام والسلة. استخدم `key` لإعادة ضبطه لما `defaultText` يتغيّر.
- */
 export function CustomItemRequest({
   defaultText = "",
   className,
 }: {
   defaultText?: string;
-  /** مابقاش له تأثير: الحقل ظاهر دايمًا. سايبينه علشان الاستخدام القديم في الصفحات ما يتكسرش */
   defaultOpen?: boolean;
   className?: string;
 }) {
@@ -37,21 +31,28 @@ export function CustomItemRequest({
         cart.addCustom(text.trim(), note.trim() || undefined);
         setText("");
         setNote("");
-        toast.success("اتضاف للسلة", { action: { label: "افتح السلة", onClick: () => void navigate({ to: "/cart" }) } });
+        toast.success("اتضاف للسلة", {
+          action: { label: "افتح السلة", onClick: () => void navigate({ to: "/cart" }) },
+        });
       }}
-      className={cn("rounded-2xl border border-highlight/40 bg-highlight-soft/60 p-4", className)}
+      className={cn(
+        "rounded-2xl border border-border/80 bg-card p-4 shadow-2xs transition-colors focus-within:border-primary/50",
+        className,
+      )}
     >
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-highlight text-highlight-foreground">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
           <Plane className="size-5 rtl:-scale-x-100" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <h3 className="font-bold leading-snug">مش لاقي اللي عايزه؟ اطلبه من الطيار</h3>
-          <p className="text-xs text-muted-foreground">اكتب أي حاجة وهنشتريهالك، وسعرها بيتحسب بعد الشراء.</p>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h4 className="text-sm font-bold text-foreground sm:text-base">
+            مش لاقي اللي عايزه؟ اكتبه هنا وهنشتريهولك
+          </h4>
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2">
+      {/* حقل مدمج مع الزر جواه */}
+      <div className="mt-3.5 flex items-center gap-1.5 rounded-xl border border-border bg-background p-1.5 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
         <input
           ref={inputRef}
           value={text}
@@ -59,10 +60,14 @@ export function CustomItemRequest({
           maxLength={200}
           aria-label="اسم الصنف اللي عايزه"
           placeholder="اكتب اسم الصنف هنا…"
-          className="h-12 min-w-0 flex-1 rounded-xl border bg-card px-3 text-base outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="h-9 min-w-0 flex-1 bg-transparent px-2.5 text-sm outline-none placeholder:text-muted-foreground"
         />
-        <button type="submit" className="h-12 shrink-0 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-deep">
-          اطلبها
+        <button
+          type="submit"
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95"
+        >
+          <span>ضيفه للسلة</span>
+          <ArrowUpLeft className="size-3.5" />
         </button>
       </div>
 
@@ -72,8 +77,8 @@ export function CustomItemRequest({
           onChange={(e) => setNote(e.target.value)}
           maxLength={200}
           aria-label="ملاحظة"
-          placeholder="ملاحظة للطيار (اختياري): الماركة، الحجم…"
-          className="mt-2 h-11 w-full rounded-xl border bg-card px-3 text-sm outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+          placeholder="ملاحظة (اختياري): الماركة، الحجم…"
+          className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-muted/40 px-3 text-xs outline-none transition-colors focus:border-primary focus:bg-background"
         />
       )}
     </form>
