@@ -3,12 +3,13 @@ import { useState } from "react";
 import { Search, Plane, BadgePercent, Clock, UtensilsCrossed } from "lucide-react";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
 import { formatMoney, bpsToPercent } from "@/lib/money";
-import { StoreLayout, CartButton } from "@/components/store/StoreLayout";
+import { StoreLayout } from "@/components/store/StoreLayout";
 import { BannerCarousel, defaultBanners } from "@/components/store/BannerCarousel";
 import { SectionHeader, seeAllClass } from "@/components/store/SectionHeader";
 import { ProductCard } from "@/components/store/ProductCard";
 import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { categoryIcon, categoryTone } from "@/components/store/CategoryIcon";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(catalogQuery),
@@ -58,7 +59,15 @@ function HomePage() {
             {settings.tagline && <p className="text-xs text-muted-foreground">{settings.tagline}</p>}
           </div>
         </div>
-        <CartButton />
+        <span
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
+            settings.acceptingOrders ? "bg-primary-soft text-primary-deep" : "bg-muted text-muted-foreground",
+          )}
+        >
+          <span className={cn("size-2 rounded-full", settings.acceptingOrders ? "bg-success" : "bg-muted-foreground")} />
+          {settings.acceptingOrders ? "بنستقبل أوردرات" : "مقفول دلوقتي"}
+        </span>
       </header>
 
       {!settings.acceptingOrders && (
@@ -112,7 +121,7 @@ function HomePage() {
             const Icon = categoryIcon(cat.slug);
             return (
               <Link key={cat.id} to="/categories" search={{ c: cat.slug }} className="group flex w-20 shrink-0 flex-col items-center gap-2 text-center md:w-auto">
-                <span className={`grid size-20 place-items-center overflow-hidden rounded-2xl transition-transform group-hover:-translate-y-0.5 ${categoryTone(i)}`}>
+                <span className={`grid size-20 place-items-center overflow-hidden rounded-2xl transition-transform group-hover:-translate-y-0.5 ${categoryTone(i, cat.slug)}`}>
                   {cat.thumbUrl ?? cat.imageUrl ? (
                     <img src={(cat.thumbUrl ?? cat.imageUrl)!} alt={cat.name} className="size-full object-cover" loading="lazy" />
                   ) : (
@@ -140,16 +149,16 @@ function HomePage() {
         <section id="restaurants" className="mt-7 scroll-mt-4 px-4 md:px-6">
           <SectionHeader title="المطاعم والمحلات" action={<Link to="/stores" className={seeAllClass}>عرض الكل</Link>} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {c.stores.map((s, i) => {
+            {c.stores.map((s) => {
               const count = c.products.filter((p) => p.storeId === s.id).length;
               return (
                 <Link
                   key={s.id}
                   to="/store/$slug"
                   params={{ slug: s.slug }}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card transition-transform hover:-translate-y-0.5"
+                  className="flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors hover:border-primary/40"
                 >
-                  <span className={`grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl ${categoryTone(i + 1)}`}>
+                  <span className={`grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl ${categoryTone(0, "restaurant")}`}>
                     {s.thumbUrl ?? s.imageUrl ? (
                       <img src={(s.thumbUrl ?? s.imageUrl)!} alt={s.name} className="size-full object-cover" loading="lazy" />
                     ) : (

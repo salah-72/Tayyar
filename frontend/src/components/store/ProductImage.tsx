@@ -21,7 +21,7 @@ export function ProductImage({
   }
   const Icon = categoryIcon(slug);
   return (
-    <div className={cn("grid size-full place-items-center", categoryTone(toneIndex), className)} aria-label={alt}>
+    <div className={cn("grid size-full place-items-center", categoryTone(toneIndex, slug), className)} aria-label={alt}>
       <Icon className={cn("size-1/3 opacity-80", iconClassName)} strokeWidth={1.5} />
     </div>
   );

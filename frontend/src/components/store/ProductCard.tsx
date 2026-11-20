@@ -52,58 +52,58 @@ export function ProductCard({
   const badge = discountLabel(p);
 
   return (
-    <div className={cn("group relative flex flex-col overflow-hidden rounded-2xl bg-card p-2.5 shadow-card", className)}>
-      {badge && (
-        <span className="absolute start-2.5 top-2.5 z-10 rounded-full bg-sale px-2 py-0.5 text-[11px] font-bold text-sale-foreground">
-          {badge}
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={() => productSheet.open(p.id)}
-        className="block aspect-square w-full overflow-hidden rounded-xl"
-        aria-label={`تفاصيل ${p.name}`}
-      >
-        <ProductImage
-          src={p.thumbUrl ?? p.imageUrl}
-          alt={p.name}
-          slug={slug}
-          toneIndex={toneIndex}
-          className="transition-transform duration-300 group-hover:scale-105"
-        />
-      </button>
-      <div className="flex flex-1 flex-col px-0.5 pt-2.5">
-        <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+    <div className={cn("group flex flex-col rounded-2xl border bg-card p-2", className)}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => productSheet.open(p.id)}
+          className="block aspect-square w-full overflow-hidden rounded-xl"
+          aria-label={`تفاصيل ${p.name}`}
+        >
+          <ProductImage
+            src={p.thumbUrl ?? p.imageUrl}
+            alt={p.name}
+            slug={slug}
+            toneIndex={toneIndex}
+            className={cn("transition-transform duration-300 group-hover:scale-105", !p.available && "opacity-40 grayscale")}
+          />
         </button>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {p.saleMode === "WEIGHT" ? `بال${p.unitLabel}` : p.unitLabel}
-        </p>
-        <PriceTag p={p} className="mt-auto pt-2" />
-        <div className="mt-2">
-          {!p.available ? (
-            <div className="grid h-10 place-items-center rounded-xl bg-muted text-sm text-muted-foreground">مش متاح دلوقتي</div>
-          ) : line ? (
-            <QtyStepper
-              value={line.quantity}
-              unitLabel={p.saleMode === "WEIGHT" ? p.unitLabel : undefined}
-              canTrash={line.quantity - p.qtyStep < p.minQty}
-              onInc={() => cart.setQuantity(key, stepQty(p, line.quantity, 1))}
-              onDec={() => cart.setQuantity(key, stepQty(p, line.quantity, -1))}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() =>
-                simple ? cart.addProduct({ productId: p.id, quantity: p.minQty }) : productSheet.open(p.id)
-              }
-              className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-deep active:scale-[0.98]"
-            >
-              {inCart > 0 ? <Check className="size-4" /> : <Plus className="size-4" />}
-              {inCart > 0 ? "زوّد تاني" : "أضف"}
-            </button>
-          )}
-        </div>
+        {badge && (
+          <span className="absolute start-1.5 top-1.5 rounded-full bg-sale px-2 py-0.5 text-[11px] font-bold text-sale-foreground">
+            {badge}
+          </span>
+        )}
+        {!p.available ? (
+          <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-card/90 py-1 text-center text-xs font-semibold text-muted-foreground">
+            مش متاح دلوقتي
+          </span>
+        ) : line ? (
+          <QtyStepper
+            size="sm"
+            className="absolute bottom-1.5 end-1.5 shadow-card"
+            value={line.quantity}
+            unitLabel={p.saleMode === "WEIGHT" ? p.unitLabel : undefined}
+            canTrash={line.quantity - p.qtyStep < p.minQty}
+            onInc={() => cart.setQuantity(key, stepQty(p, line.quantity, 1))}
+            onDec={() => cart.setQuantity(key, stepQty(p, line.quantity, -1))}
+          />
+        ) : (
+          <button
+            type="button"
+            aria-label={inCart > 0 ? `زوّد ${p.name} تاني` : `أضف ${p.name}`}
+            onClick={() => (simple ? cart.addProduct({ productId: p.id, quantity: p.minQty }) : productSheet.open(p.id))}
+            className="absolute bottom-1.5 end-1.5 grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-card transition-colors hover:bg-primary-deep active:scale-95"
+          >
+            {inCart > 0 ? <Check className="size-5" /> : <Plus className="size-5" />}
+          </button>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col px-0.5 pt-2">
+        <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
+          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+        </button>
+        <p className="text-xs text-muted-foreground">{p.saleMode === "WEIGHT" ? `بال${p.unitLabel}` : p.unitLabel}</p>
+        <PriceTag p={p} className="mt-auto pt-1.5" />
       </div>
     </div>
   );
