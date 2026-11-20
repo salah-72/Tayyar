@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ChevronLeft, Search, Store, UtensilsCrossed, X } from "lucide-react";
+import { ChevronLeft, Search, Sparkles, Store, UtensilsCrossed, X } from "lucide-react";
 import { catalogQuery, normalizeArabic, useCatalog } from "@/lib/catalog";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import { categoryTone } from "@/components/store/CategoryIcon";
@@ -10,9 +10,15 @@ export const Route = createFileRoute("/stores")({
   head: () => ({
     meta: [
       { title: "المطاعم والمحلات — البيه الطيار" },
-      { name: "description", content: "تصفح المطاعم والمحلات واطلب من المنيو المفضل ليك ويوصلك لحد البيت." },
+      {
+        name: "description",
+        content: "تصفح المطاعم والمحلات واطلب من المنيو المفضل ليك ويوصلك لحد البيت.",
+      },
       { property: "og:title", content: "المطاعم والمحلات — البيه الطيار" },
-      { property: "og:description", content: "اطلب أكلك المفضل من أحسن المطاعم والمحلات ويوصلك لحد البيت." },
+      {
+        property: "og:description",
+        content: "اطلب أكلك المفضل من أحسن المطاعم والمحلات ويوصلك لحد البيت.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -21,7 +27,6 @@ export const Route = createFileRoute("/stores")({
 });
 
 function StoresPage() {
-  // The backend catalog only returns active stores of type RESTAURANT, so `c.stores` is exactly that list.
   const c = useCatalog();
   const [q, setQ] = useState("");
 
@@ -39,39 +44,70 @@ function StoresPage() {
 
   return (
     <StoreLayout>
-      <div className="sticky top-0 z-30 bg-background/95 pb-3 pt-5 backdrop-blur">
-        <div className="px-4 md:px-6">
-          <h1 className="text-2xl font-bold">المطاعم والمحلات</h1>
+      {/* Sticky Header & Search */}
+      <div className="sticky top-0 z-30 border-b border-border/40 bg-background/90 pb-4 pt-5 backdrop-blur-md">
+        <div className="flex items-end justify-between px-4 md:px-6">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight">المطاعم والمحلات</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">اختار مطعمك المفضل واطلب أونلاين</p>
+          </div>
+          {c.stores.length > 0 && (
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {stores.length} {stores.length === 1 ? "مطعم" : "مطاعم"}
+            </span>
+          )}
         </div>
-        <div className="mt-3 px-4 md:px-6">
-          <label className="flex h-11 items-center gap-2 rounded-2xl border bg-card px-3.5">
-            <Search className="size-4 text-primary" />
+
+        <div className="mt-3.5 px-4 md:px-6">
+          <label className="flex h-12 items-center gap-2.5 rounded-2xl border border-border/80 bg-card px-4 shadow-sm transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+            <Search className="size-4.5 shrink-0 text-primary" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="ابحث عن مطعم أو محل..."
-              className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              placeholder="ابحث باسم المطعم أو نوع الأكل..."
+              className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/80"
             />
             {q && (
-              <button aria-label="امسح البحث" onClick={() => setQ("")}>
-                <X className="size-4 text-muted-foreground" />
+              <button
+                type="button"
+                aria-label="امسح البحث"
+                onClick={() => setQ("")}
+                className="grid size-7 place-items-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+              >
+                <X className="size-3.5" />
               </button>
             )}
           </label>
         </div>
       </div>
 
-      <div className="px-4 md:px-6">
+      {/* Stores Grid */}
+      <div className="px-4 py-5 md:px-6">
         {stores.length === 0 ? (
-          <div className="rounded-3xl border border-dashed bg-card/60 px-6 py-16 text-center">
-            <Store className="mx-auto size-10 text-muted-foreground" strokeWidth={1.5} />
-            <p className="mt-3 font-semibold">{q ? "مفيش مطعم أو محل بالاسم ده" : "مفيش مطاعم أو محلات متاحة دلوقتي"}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {q ? "جرّب كلمة تانية أو امسح البحث." : "ارجع كمان شوية، هنضيف مطاعم ومحلات جديدة قريب."}
+          <div className="mx-auto max-w-md rounded-3xl border border-dashed bg-card/60 px-6 py-16 text-center">
+            <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
+              <Store className="size-8" strokeWidth={1.5} />
+            </div>
+            <p className="mt-4 text-base font-bold">
+              {q ? "مفيش مطعم أو محل بالاسم ده" : "مفيش مطاعم أو محلات متاحة دلوقتي"}
             </p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {q
+                ? "جرّب تكتب كلمة تانية أو امسح البحث عشان تشوف كل المطاعم."
+                : "ارجع كمان شوية، هنضيف مطاعم ومحلات جديدة قريب."}
+            </p>
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="mt-5 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-transform active:scale-95"
+              >
+                عرض كل المطاعم
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {stores.map((s) => {
               const count = itemsCount.get(s.id) ?? 0;
               const img = s.thumbUrl ?? s.imageUrl;
@@ -80,21 +116,57 @@ function StoresPage() {
                   key={s.id}
                   to="/store/$slug"
                   params={{ slug: s.slug }}
-                  className="flex items-center gap-3 rounded-2xl border bg-card p-3 transition-colors hover:border-primary/40"
+                  className="group relative flex items-center gap-3.5 rounded-2xl border border-border/70 bg-card p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:scale-[0.99]"
                 >
-                  <span className={`grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl ${categoryTone(0, "restaurant")}`}>
+                  <div
+                    className={`grid size-22 shrink-0 place-items-center overflow-hidden rounded-2xl border border-black/5 ${categoryTone(0, "restaurant")}`}
+                  >
                     {img ? (
-                      <img src={img} alt={s.name} className="size-full object-cover" loading="lazy" />
+                      <img
+                        src={img}
+                        alt={s.name}
+                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
                     ) : (
-                      <UtensilsCrossed className="size-8" strokeWidth={1.5} />
+                      <UtensilsCrossed className="size-9 opacity-80" strokeWidth={1.5} />
                     )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold">{s.name}</p>
-                    {s.sections.length > 0 && <p className="truncate text-xs text-muted-foreground">{s.sections.join(" · ")}</p>}
-                    <p className="mt-1 text-xs text-primary">{count} صنف في المنيو</p>
                   </div>
-                  <ChevronLeft className="size-5 shrink-0 text-muted-foreground" />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary">
+                      {s.name}
+                    </p>
+
+                    {s.sections.length > 0 ? (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {s.sections.slice(0, 3).map((sec) => (
+                          <span
+                            key={sec}
+                            className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                          >
+                            {sec}
+                          </span>
+                        ))}
+                        {s.sections.length > 3 && (
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                            +{s.sections.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted-foreground">منيو متنوع</p>
+                    )}
+
+                    <div className="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                      <Sparkles className="size-3.5" />
+                      <span>{count} صنف في المنيو</span>
+                    </div>
+                  </div>
+
+                  <div className="grid size-8 shrink-0 place-items-center rounded-full bg-muted/50 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                    <ChevronLeft className="size-4.5 transition-transform group-hover:-translate-x-0.5" />
+                  </div>
                 </Link>
               );
             })}

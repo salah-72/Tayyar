@@ -25,11 +25,13 @@ export function PriceTag({ p, className }: { p: CatalogProduct; className?: stri
       {p.price.startsFrom && <span className="text-[11px] text-muted-foreground">يبدأ من</span>}
       <span data-price className="text-base font-bold text-primary-deep tabular-nums">
         {formatMoney(p.price.finalMinor, { currency: false })}
-        <span className="ms-0.5 text-xs font-semibold">ج</span>
+        <span className="ms-0.5 text-xs font-semibold"> جـ</span>
       </span>
       {per && <span className="text-[11px] text-muted-foreground">{per}</span>}
       {p.price.hasDiscount && (
-        <span className="text-xs text-muted-foreground line-through tabular-nums">{formatMoney(p.price.listMinor)}</span>
+        <span className="text-xs text-muted-foreground line-through tabular-nums">
+          {formatMoney(p.price.listMinor)}
+        </span>
       )}
       {isApproxProduct(p) && <ApproxBadge />}
     </div>
@@ -50,7 +52,9 @@ export function ProductCard({
   const { lines } = useCart();
   const simple = !needsChoices(p);
   const key = lineKey(p.id);
-  const line = simple ? (lines.find((l) => l.key === key) as CartProductLine | undefined) : undefined;
+  const line = simple
+    ? (lines.find((l) => l.key === key) as CartProductLine | undefined)
+    : undefined;
   const inCart = quantityInCart(lines, p.id);
   const badge = discountLabel(p);
 
@@ -68,7 +72,10 @@ export function ProductCard({
             alt={p.name}
             slug={slug}
             toneIndex={toneIndex}
-            className={cn("transition-transform duration-300 group-hover:scale-105", !p.available && "opacity-40 grayscale")}
+            className={cn(
+              "transition-transform duration-300 group-hover:scale-105",
+              !p.available && "opacity-40 grayscale",
+            )}
           />
         </button>
         {badge && (
@@ -94,7 +101,11 @@ export function ProductCard({
           <button
             type="button"
             aria-label={inCart > 0 ? `زوّد ${p.name} تاني` : `أضف ${p.name}`}
-            onClick={() => (simple ? cart.addProduct({ productId: p.id, quantity: p.minQty }) : productSheet.open(p.id))}
+            onClick={() =>
+              simple
+                ? cart.addProduct({ productId: p.id, quantity: p.minQty })
+                : productSheet.open(p.id)
+            }
             className="absolute bottom-1.5 end-1.5 grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-card transition-colors hover:bg-primary-deep active:scale-95"
           >
             {inCart > 0 ? <Check className="size-5" /> : <Plus className="size-5" />}
@@ -103,9 +114,13 @@ export function ProductCard({
       </div>
       <div className="flex flex-1 flex-col px-0.5 pt-1.5">
         <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+            {p.name}
+          </h3>
         </button>
-        {p.saleMode === "PIECE_WEIGHT" && <p className="text-xs text-muted-foreground">{p.unitLabel}</p>}
+        {p.saleMode === "PIECE_WEIGHT" && (
+          <p className="text-xs text-muted-foreground">{p.unitLabel}</p>
+        )}
         <PriceTag p={p} className="mt-auto pt-1" />
       </div>
     </div>
