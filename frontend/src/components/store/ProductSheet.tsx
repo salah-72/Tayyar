@@ -6,6 +6,7 @@ import { useCatalog } from "@/lib/catalog";
 import { cart } from "@/lib/cart";
 import { formatMoney, formatQty } from "@/lib/money";
 import { estimateLine, stepQty } from "@/lib/pricing";
+import { isApproxProduct } from "@/lib/approx";
 import type { CatalogOptionGroup, CatalogProduct } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "./ProductImage";
@@ -96,7 +97,7 @@ function SheetBody({ p, slug, toneIndex }: { p: CatalogProduct; slug?: string; t
         )}
 
         {p.saleMode === "WEIGHT" && p.weightChoices.length > 0 && (
-          <Section title="اختار الوزن">
+          <Section title="اختار الوزن" hint="السعر النهائي بيتحدد بعد الوزن الفعلي">
             <div className="flex flex-wrap gap-2">
               {p.weightChoices
                 .filter((w) => w >= p.minQty)
@@ -180,7 +181,7 @@ function SheetBody({ p, slug, toneIndex }: { p: CatalogProduct; slug?: string; t
           className="flex h-12 flex-1 items-center justify-between rounded-xl bg-primary px-4 font-semibold text-primary-foreground transition-colors hover:bg-primary-deep disabled:opacity-50"
         >
           <span className="whitespace-nowrap">{p.available ? "أضف للسلة" : "مش متاح"}</span>
-          <span className="whitespace-nowrap tabular-nums">{p.saleMode === "PIECE_WEIGHT" ? "≈ " : ""}{formatMoney(total)}</span>
+          <span className="whitespace-nowrap tabular-nums">{isApproxProduct(p) ? "≈ " : ""}{formatMoney(total)}</span>
         </button>
       </div>
     </div>

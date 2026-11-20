@@ -6,11 +6,13 @@ import { cart, useCart, type CartLine } from "@/lib/cart";
 import { badProductId, useQuote } from "@/lib/quote";
 import { formatMoney, formatQty } from "@/lib/money";
 import { stepQty } from "@/lib/pricing";
+import { isApproxProduct, useApprox } from "@/lib/approx";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import { CustomItemRequest } from "@/components/store/CustomItemRequest";
 import { ProductImage } from "@/components/store/ProductImage";
 import { QtyStepper } from "@/components/store/QtyStepper";
 import { PricingSummary } from "@/components/store/PricingSummary";
+import { ApproxBadge } from "@/components/store/ApproxBadge";
 import { Progress } from "@/components/ui/progress";
 import type { QuoteItem } from "@/lib/api/types";
 
@@ -34,6 +36,8 @@ function CartPage() {
   const c = useCatalog();
   const { lines } = useCart();
   const quote = useQuote(lines);
+  const approx = useApprox();
+  const anyApprox = quote.data ? approx.any(quote.data.items) : false;
   const bad = badProductId(quote.error);
   const threshold = c.settings.freeDeliveryThresholdMinor;
   const subtotal = quote.data ? quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor : 0;
@@ -103,7 +107,7 @@ function CartPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-6 rounded-2xl bg-card p-5 shadow-card">
             <h2 className="mb-4 font-bold">ملخص الطلب</h2>
-            {quote.data ? <PricingSummary pricing={quote.data.pricing} isEstimated={quote.data.isEstimated} needsPricing={quote.data.needsPricing} /> : <Loader2 className="mx-auto animate-spin text-muted-foreground" />}
+            {quote.data ? <PricingSummary pricing={quote.data.pricing} isEstimated={anyApprox} needsPricing={quote.data.needsPricing} /> : <Loader2 className="mx-auto animate-spin text-muted-foreground" />}
             <CheckoutButton disabled={!quote.data || !!quote.error} className="mt-5 w-full" />
           </div>
         </aside>
@@ -114,7 +118,7 @@ function CartPage() {
           <div className="flex-1">
             <p className="text-xs text-muted-foreground">{lines.length} منتجات</p>
             <p className="text-lg font-bold tabular-nums text-primary-deep">
-              {quote.isFetching && !quote.data ? "..." : quote.data ? formatMoney(quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor + quote.data.pricing.serviceFeeMinor) : "—"}
+              {quote.isFetching && !quote.data ? "..." : quote.data ? (anyApprox ? "≈ " : "") + formatMoney(quote.data.pricing.subtotalMinor - quote.data.pricing.invoiceDiscountMinor + quote.data.pricing.serviceFeeMinor) : "—"}
             </p>
           </div>
           <CheckoutButton disabled={!quote.data || !!quote.error} className="flex-1" />
@@ -226,7 +230,8 @@ function CartRow({
             {item && item.lineDiscountMinor > 0 && item.lineTotalMinor != null && (
               <p className="text-xs text-muted-foreground line-through tabular-nums">{formatMoney(item.lineTotalMinor + item.lineDiscountMinor)}</p>
             )}
-            <p className="font-bold tabular-nums text-primary-deep">{item ? formatMoney(item.lineTotalMinor) : "..."}</p>
+            <p className="font-bold tabular-nums text-primary-deep">{item ? (p && isApproxProduct(p) ? "≈ " : "") + formatMoney(item.lineTotalMinor) : "..."}</p>
+            {p && isApproxProduct(p) && <ApproxBadge className="mt-0.5" />}
           </div>
         </div>
       </div>

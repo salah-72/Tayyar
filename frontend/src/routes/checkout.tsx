@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { catalogQuery, useCatalog } from "@/lib/catalog";
 import { cart, toPayload, useCart } from "@/lib/cart";
 import { useQuote } from "@/lib/quote";
+import { useApprox } from "@/lib/approx";
 import { api, errorMessage } from "@/lib/api/client";
 import { formatMoney } from "@/lib/money";
 import type { CreateOrderResult } from "@/lib/api/types";
@@ -37,6 +38,7 @@ function newToken() {
 
 function CheckoutPage() {
   const c = useCatalog();
+  const approx = useApprox();
   const state = useCart();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -197,12 +199,12 @@ function CheckoutPage() {
               {(quote.data?.items ?? []).map((it, i) => (
                 <li key={i} className="flex justify-between gap-2">
                   <span className="truncate">{it.name} <span className="text-muted-foreground">× {it.quantity}</span></span>
-                  <span className="shrink-0 tabular-nums">{it.lineTotalMinor == null ? "بعد الشراء" : formatMoney(it.lineTotalMinor)}</span>
+                  <span className="shrink-0 tabular-nums">{it.lineTotalMinor == null ? "بعد الشراء" : (approx.isApprox(it.productId) ? "≈ " : "") + formatMoney(it.lineTotalMinor)}</span>
                 </li>
               ))}
             </ul>
             {quote.error && <p className="rounded-xl bg-destructive/5 p-3 text-sm text-destructive">{quote.error.message}</p>}
-            {quote.data && <PricingSummary pricing={quote.data.pricing} isEstimated={quote.data.isEstimated} needsPricing={quote.data.needsPricing} />}
+            {quote.data && <PricingSummary pricing={quote.data.pricing} isEstimated={approx.any(quote.data.items)} needsPricing={quote.data.needsPricing} />}
             <button
               type="submit"
               disabled={busy || !quote.data || !!quote.error || !c.settings.acceptingOrders}
@@ -228,6 +230,7 @@ function Field({ id, label, children }: { id: string; label: string; children: R
 }
 
 function OrderDone({ result }: { result: CreateOrderResult }) {
+  const approx = useApprox();
   const { order, whatsapp } = result;
   return (
     <StoreLayout>
@@ -249,7 +252,7 @@ function OrderDone({ result }: { result: CreateOrderResult }) {
         <div className="mt-6 rounded-2xl bg-card p-5 text-start shadow-card">
           <p className="mb-1 text-sm"><span className="text-muted-foreground">التوصيل لـ:</span> {order.area} — {order.addressDetails}</p>
           <p className="mb-4 text-sm"><span className="text-muted-foreground">الموبايل:</span> <span dir="ltr">{order.customer.phone}</span></p>
-          <PricingSummary pricing={order.pricing} isEstimated={order.isEstimated} needsPricing={order.needsPricing} />
+          <PricingSummary pricing={order.pricing} isEstimated={approx.any(order.items)} needsPricing={order.needsPricing} />
         </div>
         <Link to="/" className="mt-6 inline-block text-sm font-semibold text-primary">ارجع للرئيسية</Link>
       </div>

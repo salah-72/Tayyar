@@ -3,7 +3,9 @@ import type { CatalogProduct } from "@/lib/api/types";
 import { cart, lineKey, quantityInCart, useCart, type CartProductLine } from "@/lib/cart";
 import { formatMoney } from "@/lib/money";
 import { needsChoices, stepQty } from "@/lib/pricing";
+import { isApproxProduct } from "@/lib/approx";
 import { cn } from "@/lib/utils";
+import { ApproxBadge } from "./ApproxBadge";
 import { ProductImage } from "./ProductImage";
 import { QtyStepper } from "./QtyStepper";
 import { productSheet } from "./product-sheet-store";
@@ -26,6 +28,7 @@ export function PriceTag({ p, className }: { p: CatalogProduct; className?: stri
       {p.price.hasDiscount && (
         <span className="text-xs text-muted-foreground line-through tabular-nums">{formatMoney(p.price.listMinor)}</span>
       )}
+      {isApproxProduct(p) && <ApproxBadge />}
     </div>
   );
 }
