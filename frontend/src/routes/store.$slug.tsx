@@ -41,7 +41,7 @@ function StorePage() {
     <StoreLayout>
       <div className="relative bg-gradient-hero px-4 pb-14 pt-5 text-primary-foreground md:px-6">
         <div className="flex items-center justify-between">
-          <Link to="/" hash="restaurants" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
+          <Link to="/stores" aria-label="رجوع" className="grid size-11 place-items-center rounded-full bg-primary-foreground/15">
             <ArrowRight className="size-5" />
           </Link>
           <CartButton />
