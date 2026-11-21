@@ -36,7 +36,8 @@ export function CustomItemRequest({
         });
       }}
       className={cn(
-        "rounded-2xl border border-border/80 bg-card p-4 shadow-2xs transition-colors focus-within:border-primary/50",
+        // نفس لون كروت المنتجات
+        "rounded-2xl border border-border bg-[oklch(0.955_0.012_145)] p-4 transition-colors focus-within:border-primary/50",
         className,
       )}
     >
@@ -52,7 +53,7 @@ export function CustomItemRequest({
       </div>
 
       {/* حقل مدمج مع الزر جواه */}
-      <div className="mt-3.5 flex items-center gap-1.5 rounded-xl border border-border bg-background p-1.5 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+      <div className="mt-3.5 flex items-center gap-1.5 rounded-xl border border-border bg-card p-1.5 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
         <input
           ref={inputRef}
           value={text}
@@ -78,7 +79,7 @@ export function CustomItemRequest({
           maxLength={200}
           aria-label="ملاحظة"
           placeholder="ملاحظة (اختياري): الماركة، الحجم…"
-          className="mt-2 h-10 w-full rounded-xl border border-border/70 bg-muted/40 px-3 text-xs outline-none transition-colors focus:border-primary focus:bg-background"
+          className="mt-2 h-10 w-full rounded-xl border border-border bg-card px-3 text-xs outline-none transition-colors focus:border-primary"
         />
       )}
     </form>

@@ -125,7 +125,7 @@ function CategoriesPage() {
                   data-active={on}
                   className={cn(
                     "flex shrink-0 items-center gap-2 rounded-full border py-1.5 ps-1.5 pe-3.5 text-sm font-medium transition-colors",
-                    on ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-primary/40",
+                    on ? "border-primary bg-primary text-primary-foreground" : "bg-[oklch(0.955_0.012_145)] hover:border-primary/40",
                   )}
                 >
                   <span className={cn("grid size-7 place-items-center rounded-full", on ? "bg-primary-foreground/20" : categoryTone(idx, cat.slug))}>
