@@ -65,7 +65,7 @@ export function CustomItemRequest({
         />
         <button
           type="submit"
-          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-95"
+          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary-deep active:scale-95"
         >
           <span>ضيفه للسلة</span>
           <ArrowUpLeft className="size-3.5" />

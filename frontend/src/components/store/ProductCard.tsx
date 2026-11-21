@@ -1,4 +1,4 @@
-import { Plus, Check } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/lib/api/types";
 import { cart, lineKey, quantityInCart, useCart, type CartProductLine } from "@/lib/cart";
 import { formatMoney } from "@/lib/money";
@@ -27,12 +27,12 @@ export function PriceTag({ p, className }: { p: CatalogProduct; className?: stri
         {formatMoney(p.price.finalMinor, { currency: false })}
         <span className="ms-0.5 text-xs font-semibold">ج</span>
       </span>
+      {per && <span className="text-[11px] text-muted-foreground">{per}</span>}
       {p.price.hasDiscount && (
-        <span className="text-xs text-muted-foreground line-through tabular-nums">
-          {formatMoney(p.price.listMinor, { currency: false })} ج
+        <span className="text-[13px] text-muted-foreground tabular-nums line-through decoration-1 decoration-muted-foreground/60">
+          {formatMoney(p.price.listMinor, { currency: false })}
         </span>
       )}
-      {per && <span className="text-[11px] text-muted-foreground">{per}</span>}
       {isApproxProduct(p) && <ApproxBadge />}
     </div>
   );
@@ -78,14 +78,22 @@ export function ProductCard({
             {badge}
           </span>
         )}
+      </div>
+      <div className="flex flex-1 flex-col px-0.5 pt-1.5">
+        <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+        </button>
+        <PriceTag p={p} className="mt-auto pt-1" />
+      </div>
+      <div className="mt-2">
         {!p.available ? (
-          <span className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-card/90 py-1 text-center text-xs font-semibold text-muted-foreground">
+          <div className="grid h-9 place-items-center rounded-xl bg-muted text-xs font-semibold text-muted-foreground">
             مش متاح دلوقتي
-          </span>
+          </div>
         ) : line ? (
           <QtyStepper
             size="sm"
-            className="absolute bottom-1.5 end-1.5 shadow-card"
+            className="w-full"
             value={line.quantity}
             unitLabel={p.saleMode === "WEIGHT" ? p.unitLabel : undefined}
             canTrash={line.quantity - p.qtyStep < p.minQty}
@@ -95,19 +103,14 @@ export function ProductCard({
         ) : (
           <button
             type="button"
-            aria-label={inCart > 0 ? `زوّد ${p.name} تاني` : `أضف ${p.name}`}
+            aria-label={`أضف ${p.name} للسلة`}
             onClick={() => (simple ? cart.addProduct({ productId: p.id, quantity: p.minQty }) : productSheet.open(p.id))}
-            className="absolute bottom-1.5 end-1.5 grid size-10 place-items-center rounded-full bg-primary text-primary-foreground shadow-card transition-colors hover:bg-primary-deep active:scale-95"
+            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-deep active:scale-[0.98]"
           >
-            {inCart > 0 ? <Check className="size-5" /> : <Plus className="size-5" />}
+            <ShoppingCart className="size-4" aria-hidden />
+            {inCart > 0 ? "أضف تاني" : "أضف للسلة"}
           </button>
         )}
-      </div>
-      <div className="flex flex-1 flex-col px-0.5 pt-1.5">
-        <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
-        </button>
-        <PriceTag p={p} className="mt-auto pt-1" />
       </div>
     </div>
   );
