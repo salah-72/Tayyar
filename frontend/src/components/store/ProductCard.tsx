@@ -25,7 +25,7 @@ export function PriceTag({ p, className }: { p: CatalogProduct; className?: stri
       {p.price.startsFrom && <span className="text-[11px] text-muted-foreground">يبدأ من</span>}
       <span data-price className="text-base font-bold text-primary-deep tabular-nums">
         {formatMoney(p.price.finalMinor, { currency: false })}
-        <span className="ms-0.5 text-xs font-semibold">ج</span>
+        <span className="ms-0.5 text-xs font-semibold">جـ</span>
       </span>
       {per && <span className="text-[11px] text-muted-foreground">{per}</span>}
       {p.price.hasDiscount && (
@@ -52,12 +52,19 @@ export function ProductCard({
   const { lines } = useCart();
   const simple = !needsChoices(p);
   const key = lineKey(p.id);
-  const line = simple ? (lines.find((l) => l.key === key) as CartProductLine | undefined) : undefined;
+  const line = simple
+    ? (lines.find((l) => l.key === key) as CartProductLine | undefined)
+    : undefined;
   const inCart = quantityInCart(lines, p.id);
   const badge = discountLabel(p);
 
   return (
-    <div className={cn("group flex flex-col rounded-2xl border border-border bg-[oklch(0.955_0.012_145)] p-2", className)}>
+    <div
+      className={cn(
+        "group flex flex-col rounded-2xl border border-border bg-[oklch(0.955_0.012_145)] p-2",
+        className,
+      )}
+    >
       <div className="relative">
         <button
           type="button"
@@ -70,7 +77,10 @@ export function ProductCard({
             alt={p.name}
             slug={slug}
             toneIndex={toneIndex}
-            className={cn("transition-transform duration-300 group-hover:scale-105", !p.available && "opacity-40 grayscale")}
+            className={cn(
+              "transition-transform duration-300 group-hover:scale-105",
+              !p.available && "opacity-40 grayscale",
+            )}
           />
         </button>
         {badge && (
@@ -81,7 +91,9 @@ export function ProductCard({
       </div>
       <div className="flex flex-1 flex-col px-0.5 pt-1.5">
         <button type="button" onClick={() => productSheet.open(p.id)} className="text-start">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{p.name}</h3>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+            {p.name}
+          </h3>
         </button>
         <PriceTag p={p} className="mt-auto pt-1" />
       </div>
@@ -104,7 +116,11 @@ export function ProductCard({
           <button
             type="button"
             aria-label={`أضف ${p.name} للسلة`}
-            onClick={() => (simple ? cart.addProduct({ productId: p.id, quantity: p.minQty }) : productSheet.open(p.id))}
+            onClick={() =>
+              simple
+                ? cart.addProduct({ productId: p.id, quantity: p.minQty })
+                : productSheet.open(p.id)
+            }
             className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-deep active:scale-[0.98]"
           >
             <ShoppingCart className="size-4" aria-hidden />

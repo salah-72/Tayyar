@@ -228,11 +228,10 @@ export function buildWhatsappMessage({
   order: o,
 }: WhatsappInput): string {
   const L: string[] = [];
-  L.push(`🛒 أوردر جديد #${o.number} - ${storeName}`);
-  L.push('');
-  L.push(`👤 ${o.customer.name}`);
-  L.push(`📞 ${o.customer.phone}`);
-  L.push(`📍 ${o.area} - ${o.addressDetails}`);
+  L.push(`رقم الارودر: ${o.number}`);
+  L.push(`اسم العميل: ${o.customer.name}`);
+  L.push(`رقم التليفون: ${o.customer.phone}`);
+  L.push(`العنوان: ${o.area} - ${o.addressDetails}`);
   L.push('━━━━━━━━━━');
 
   o.items.forEach((i, idx) => {
@@ -242,34 +241,34 @@ export function buildWhatsappMessage({
       L.push('   (السعر بعد الشراء)');
       return;
     }
-    let head = `${idx + 1}) ${i.name} × ${formatQuantity(i.quantity, i.unit, i.saleMode)}`;
+    let head = `${idx + 1}) ${formatQuantity(i.quantity, i.unit, i.saleMode)} ${i.name}`;
     if (i.weightPerUnit != null) head += ` (وزن تقريبي ${i.weightPerUnit} كجم)`;
     L.push(head);
     for (const opt of i.options) L.push(`   + ${opt.optionName}`);
-    const approx = i.saleMode !== 'UNIT' ? ' (تقريبي)' : '';
-    L.push(`   ${formatMinor(i.lineTotalMinor ?? 0)} ج${approx}`);
+    const approx = i.weightPerUnit != null ? ' (تقريبي)' : '';
+    L.push(`   ${formatMinor(i.lineTotalMinor ?? 0)} جـ${approx}`);
   });
 
   L.push('━━━━━━━━━━');
   const p = o.pricing;
-  L.push(`المجموع: ${formatMinor(p.grossMinor)} ج`);
+  L.push(`المجموع: ${formatMinor(p.grossMinor)} جـ`);
   if (p.productDiscountMinor > 0)
-    L.push(`خصم المنتجات: -${formatMinor(p.productDiscountMinor)} ج`);
+    L.push(`خصم المنتجات: -${formatMinor(p.productDiscountMinor)} جـ`);
   if (p.invoiceDiscountMinor > 0)
     L.push(
-      `خصم الفاتورة${p.discountLabel ? ` (${p.discountLabel})` : ''}: -${formatMinor(p.invoiceDiscountMinor)} ج`,
+      `خصم الفاتورة${p.discountLabel ? ` (${p.discountLabel})` : ''}: -${formatMinor(p.invoiceDiscountMinor)} جـ`,
     );
   if (p.serviceFeeMinor > 0)
-    L.push(`${serviceFeeLabel(o.items)}: ${formatMinor(p.serviceFeeMinor)} ج`);
+    L.push(`${serviceFeeLabel(o.items)}: ${formatMinor(p.serviceFeeMinor)} جـ`);
   L.push(
-    `التوصيل: ${p.freeDeliveryApplied ? 'مجاني' : `${formatMinor(p.deliveryFeeMinor)} ج`}`,
+    `التوصيل: ${p.freeDeliveryApplied ? 'مجاني' : `${formatMinor(p.deliveryFeeMinor)} جـ`}`,
   );
-  L.push(`💰 الإجمالي: ${formatMinor(p.totalMinor)} ج`);
+  L.push(`الإجمالي: ${formatMinor(p.totalMinor)} جـ`);
 
   if (o.isEstimated)
-    L.push('⚠️ الأوزان تقريبية (±100 جم) والسعر النهائي بعد الوزن');
+    L.push('الأوزان تقريبية (±100 جم) والسعر النهائي بعد الوزن');
   if (o.needsPricing)
-    L.push('⚠️ فيه بنود سعرها بعد الشراء (مش محسوبة في الإجمالي)');
+    L.push('فيه بنود سعرها بعد الشراء (مش محسوبة في الإجمالي)');
   if (o.notes) {
     L.push('');
     L.push(`📝 ${o.notes}`);
